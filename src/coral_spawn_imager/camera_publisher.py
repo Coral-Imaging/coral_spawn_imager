@@ -19,7 +19,7 @@ from io import BytesIO
 from cv_bridge import CvBridge 
 import numpy as np
 
-from PiCameraWrapper import PiCameraWrapper
+from coral_spawn_imager.PiCameraWrapper import PiCameraWrapper
 
 
 class CameraPublisher:
@@ -35,7 +35,7 @@ class CameraPublisher:
         pub = rospy.Publisher('image', Image, queue_size=10)
         rospy.init_node('picam', anonymous=True)
         # unsure of camera capture rate - need to check, but pertty sure it's slow atm
-        rate = rospy.Rate(0.1) # 0.25 Hz
+        rate = rospy.Rate(0.5) # 0.25 Hz
 
         # picamera object and configure based on ROS parameters
         PiCam = PiCameraWrapper('ROS')
@@ -44,8 +44,14 @@ class CameraPublisher:
 
             # get image
             rospy.loginfo('Capture image')
-            img = self.capture_image(PiCam)
-            img = np.array(img)
+            img, img_name = self.capture_image(PiCam)
+            # print(img.size)
+            # print(img.format)
+            # print(img.mode)
+
+            img = np.asarray(img)
+            # print(type(img_np))
+            # print(img_np.shape)
 
             br = CvBridge()
             pub.publish(br.cv2_to_imgmsg(img))

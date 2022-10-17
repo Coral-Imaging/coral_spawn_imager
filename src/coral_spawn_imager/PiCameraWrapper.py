@@ -1,20 +1,20 @@
-#! usr/bin/env python3
+#! /usr/bin/env python3
 
 # pi camera wrapper object
 # configure camera settings
 # documentation for PiCamera module: https://picamera.readthedocs.io/en/release-1.13/api_camera.html
 
-import json
+# import json
 import os
 from picamera import PiCamera
 import datetime
 import time
 from PIL import Image
-import rospy
+# import rospy
 from io import BytesIO
 
-from config_camera_json import read_conf
-from config_camera_ros import read_ros_param
+from coral_spawn_imager.config_camera_json import read_json_config
+from coral_spawn_imager.config_camera_ros import read_ros_param
 
 
 class PiCameraWrapper:
@@ -36,13 +36,14 @@ class PiCameraWrapper:
 
         PiCamera.CAPTURE_TIMEOUT = 266.0    # double how long we are willing to wait for the camera to capture
 
-        if config_file is not None:
-            conf = read_conf(config_file)
-            self.camera = self.get_picamera(conf.resolution)
+        if config_file == 'ROS':
+            conf = read_ros_param()
+            self.camera = self.get_picamera(conf.image_width, conf.image_height)
             self.apply_conf(conf)
 
-        elif config_file == 'ROS':
-            conf = read_ros_param()
+        elif config_file is not None:
+            conf = read_json_config(config_file)
+            self.camera = self.get_picamera(conf.image_width, conf.image_height)
             self.apply_conf(conf)
 
         else:
@@ -152,13 +153,13 @@ class PiCameraWrapper:
             self.camera.awb_gains = (1.0, 1.0)
 
     
-    def capture_image(self, img_name=None, save_dir=None):
+    def capture_image(self, img_name=None, save_dir=None, format='jpeg'):
         """
         capture and return a single image using PIL
         """
         if img_name is None:
             datestr = datetime.datetime.now()
-            img_name = datestr.strftime("%Y%m%d_%H%M%S") + '_img'
+            img_name = datestr.strftime("%Y%m%d_%H%M%S") + '_img.' + format
 
         if save_dir is not None:
             img_name = os.path.join(save_dir, img_name)
@@ -166,18 +167,18 @@ class PiCameraWrapper:
         # TODO right now, returning image name vs image is not good
         # TODO make consistent output
 
-        self.camera.capture(img_name, format='png')
+        self.camera.capture(img_name, format=format)
         img_pil = Image.open(img_name)
 
         return img_pil, img_name
 
-    def capture_image_stream(self, stream=None, img_name=None, save_dir=None):
+    def capture_image_stream(self, stream=None, img_name=None, save_dir=None, format='jpeg'):
         """
         capture image from io stream and return a single image using PIL 
         """
         if img_name is None:
             datestr = datetime.datetime.now()
-            img_name = datestr.strftime("%Y%m%d_%H%M%S") + '_img'
+            img_name = datestr.strftime("%Y%m%d_%H%M%S") + '_img.' + format
 
         if save_dir is not None:
             img_name = os.path.join(save_dir, img_name)
@@ -185,7 +186,7 @@ class PiCameraWrapper:
         if stream is None:
             stream = BytesIO()
         
-        self.camera.capture(stream, 'png')
+        self.camera.capture(stream, format)
         stream.seek(0)
         img_pil = Image.open(stream)
         
@@ -256,6 +257,7 @@ class PiCameraWrapper:
         return cam_params
 
 
+
 if __name__ == "__main__":
 
     # main function
@@ -271,18 +273,21 @@ if __name__ == "__main__":
 
 
     print('setting picamerawrapper')
+    PiCam = PiCameraWrapper('ROS')
+
     # PiCam = PiCameraWrapper(camera_index, resolution, iso, shutter_speed, awb_gains)
-    config_file = 'config_camera.json'
-    PiCam = PiCameraWrapper(config_file=config_file)
+    # config_file = 'config_camera.json'
+    # PiCam = PiCameraWrapper(config_file=config_file)
 
     # check camera settings:
     param = PiCam.get_params()
     print(param['resolution'])
     print(param['exposure_mode'])
+    print(param)
 
     # capture image
     print('capturing image')
-    img_pil, img_name = PiCam.capture_image(save_dir='output')
+    img_pil, img_name = PiCam.capture_image(save_dir=None)
 
     # set parameters (turn off auto)
     PiCam.turn_off_auto_adjust()

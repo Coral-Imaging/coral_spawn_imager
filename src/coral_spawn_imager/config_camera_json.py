@@ -4,6 +4,7 @@
 read configuration file of camera settings, return dictionary
 """
 
+# import rospy
 import json
 from pathlib import Path
 from collections import namedtuple
@@ -22,7 +23,7 @@ Config = namedtuple('Config', [
 ])
 
 
-def read_conf(config_file: str = None):
+def read_json_config(config_file: str = None):
     # read config file from json file
     if config_file is None:
         config_file = Path(__file__).parent / 'config_camera.json'
