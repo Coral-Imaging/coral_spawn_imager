@@ -1,15 +1,8 @@
 <launch>
     <node
         pkg="coral_spawn_imager"
-        type="camera_publisher.py"
-        name="cam_pub"
-        output="screen"
-    />
-
-    <node
-        pkg="coral_spawn_imager"
-        type="camera_subscriber.py"
-        name="cam_sub"
+        type="simple_publisher.py"
+        name="pub"
         output="screen"
     />
 
@@ -17,9 +10,9 @@
     <param name="image_width" type="int" value="1920" />
     <param name="image_height" type="int" value="1080" />
     <param name="iso" type="int" value="400" />
-    <param name="awb_mode" type="string" value="auto" />
     <param name="red_gain" type="double" value="-1.0" />
     <param name="blue_gain" type="double" value="-1.0" />
+    <param name="awb_mode" type="string" value="auto" />
     <param name="shutter_speed" type="int" value="10000" />
     <paran name="exposure_mode" type="string" value="auto" />
 </launch>

@@ -33,12 +33,24 @@ def imager():
     # unsure of camera capture rate - need to check, but pertty sure it's slow atm
     rate = rospy.Rate(0.1) # 0.25 Hz
 
-    # setup picamera # TODO load PiCameraWrapper
+    # get camera configuration parameters
+    cam_idx = rospy.get_param("/camera_index")
+    image_height = rospy.get_param("/image_height")
+    image_width = rospy.get_param("/image_width")
+    iso = rospy.get_param("/iso")
+    awb_mode = rospy.get_param("/awb_mode")
+    red_gain = rospy.get_param("/red_gain")
+    blue_gain = rospy.get_param("/blue_gain")
+    shutter_speed = rospy.get_param("/shutter_speed")
+    exposure_mode = rospy.get_param("/exposure_mode")
+    
+    # set picamera parameters
     picam = PiCamera()
-    picam.iso = 800
-    picam.sensor_mode = 2
-    picam.resolution = (648, 486)
-    picam.shutter_speed = 100000 # 100 ms
+    picam.iso = iso
+    # picam.sensor_mode = 2
+    picam.resolution = (image_width, image_height)
+    picam.shutter_speed = shutter_speed # 100 ms
+    picam.awb_mode = awb_mode
     time.sleep(2) # cam some time to adjust to conditions
 
     while not rospy.is_shutdown():

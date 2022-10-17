@@ -13,12 +13,12 @@ import rospy
 from std_msgs.msg import String
 import time
 
-def capture_image(camera):
-    stream = BytesIO()
-    camera.capture(stream, 'jpeg')
-    stream.seek(0)
-    image_pil = pilimage.open(stream)
-    return image_pil
+# def capture_image(camera):
+#     stream = BytesIO()
+#     camera.capture(stream, 'jpeg')
+#     stream.seek(0)
+#     image_pil = pilimage.open(stream)
+#     return image_pil
     
 
 def imager():
@@ -26,6 +26,11 @@ def imager():
     rospy.init_node('pi', anonymous=True)
     # unsure of camera capture rate - need to check, but pertty sure it's slow atm
     rate = rospy.Rate(1) # Hz
+
+    cam_idx = rospy.get_param("/camera_index")
+    awb_mode = rospy.get_param("/awb_mode")
+    print(f'ROS Param: camera index = {cam_idx}')
+    print(f'ROS Param: awb mode = {awb_mode}')
 
     while not rospy.is_shutdown():
 
