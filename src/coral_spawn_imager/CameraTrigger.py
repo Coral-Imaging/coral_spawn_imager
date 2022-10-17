@@ -29,8 +29,8 @@ When this node receives a trigger from the subscribed topic, this node captures 
 
 class CameraTrigger:
 
-    CAMERA_NODE_NAME = 'picam trigger'
-    SUBSCRIBER_TOPIC_NAME = '/trigger'
+    CAMERA_NODE_NAME = 'picamtrigger'
+    SUBSCRIBER_TOPIC_NAME = 'trigger'
 
     def __init__(self, img_dir=None):
         
@@ -94,7 +94,7 @@ class CameraTrigger:
 
 if __name__ == '__main__':
     try:
-        CamPub = CameraPublisher()
+        CamPub = CameraTrigger()
         # CamPub.imager()
         rospy.loginfo('Awaiting image trigger')
 
