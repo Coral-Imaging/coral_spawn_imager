@@ -22,13 +22,17 @@ import os
 
 from coral_spawn_imager.PiCameraWrapper import PiCameraWrapper
 
+"""
+CameraTrigger: 
+When this node receives a trigger from the subscribed topic, this node captures and saves the corresponding number of images
+"""
 
 class CameraTrigger:
 
-    CAMERA_NODE_NAME = 'picam'
+    CAMERA_NODE_NAME = 'picam trigger'
     SUBSCRIBER_TOPIC_NAME = '/trigger'
 
-    def __init__(self,img_dir=None):
+    def __init__(self, img_dir=None):
         
         rospy.init_node(self.CAMERA_NODE_NAME, anonymous=True)
 
