@@ -14,8 +14,8 @@
     />
 
     <param name="camera_index" type="int" value="1"/>
-    <param name="image_width" type="int" value="1920" />
-    <param name="image_height" type="int" value="1080" />
+    <param name="image_width" type="int" value="1280" />
+    <param name="image_height" type="int" value="720" />
     <param name="iso" type="int" value="400" />
     <param name="awb_mode" type="string" value="auto" />
     <param name="red_gain" type="double" value="-1.0" />

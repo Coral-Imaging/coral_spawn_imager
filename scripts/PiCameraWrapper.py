@@ -11,6 +11,7 @@ import datetime
 import time
 from PIL import Image
 import rospy
+from io import BytesIO
 
 from config_camera_json import read_conf
 from config_camera_ros import read_ros_param
@@ -170,6 +171,28 @@ class PiCameraWrapper:
 
         return img_pil, img_name
 
+    def capture_image_stream(self, stream=None, img_name=None, save_dir=None):
+        """
+        capture image from io stream and return a single image using PIL 
+        """
+        if img_name is None:
+            datestr = datetime.datetime.now()
+            img_name = datestr.strftime("%Y%m%d_%H%M%S") + '_img'
+
+        if save_dir is not None:
+            img_name = os.path.join(save_dir, img_name)
+
+        if stream is None:
+            stream = BytesIO()
+        
+        self.camera.capture(stream, 'png')
+        stream.seek(0)
+        img_pil = Image.open(stream)
+        
+        return img_pil, img_name
+
+
+        
     
     def get_picamera(self, image_width=None, image_height=None):
         resolution = (image_width, image_height)
