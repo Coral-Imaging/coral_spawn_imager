@@ -18,31 +18,39 @@ from cv_bridge import CvBridge
 import cv2 as cv
 
 
-class ImageReceiver(object):
+class CameraSubscriber(object):
+
+    CAMERA_SUBSCRIBER_NODE_NAME = 'picam_subscriber'
+    SUBSCRIBER_TOPIC_NAME = '/image'
+    PREVIEW_WINDOW_NAME = 'picam image'
+
     def __init__(self):
+
+        rospy.init_node(self.CAMERA_SUBSCRIBER_NODE_NAME, anonymous=True)
+
         # params
         self.image = None
         self.br = CvBridge()
         self.loop_rate = rospy.Rate(1) # Hz
-        cv.namedWindow("picam image", cv.WINDOW_NORMAL)
-        cv.resizeWindow("picam image", 648, 486)
+        cv.namedWindow(self.PREVIEW_WINDOW_NAME, cv.WINDOW_NORMAL)
+        cv.resizeWindow(self.PREVIEW_WINDOW_NAME, 648, 486)
 
         # subscriber:
-        rospy.Subscriber('/image', Image, self.callback)
+        rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, Image, self.callback)
 
     def callback(self, msg):
-        rospy.loginfo('Image received...')
+        rospy.loginfo('Image received.')
         self.image = self.br.imgmsg_to_cv2(msg)
 
         # show the image
-        cv.imshow("picam image", receiver.image)
+        cv.imshow(self.PREVIEW_WINDOW_NAME, receiver.image)
         cv.waitKey(2)
 
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('receiver', anonymous=True)
-        receiver = ImageReceiver()
+        
+        receiver = CameraSubscriber()
         rospy.spin()
         cv.destroyAllWindows()
 

@@ -160,7 +160,7 @@ class PiCameraWrapper:
         """
         if img_name is None:
             datestr = datetime.datetime.now()
-            img_name = datestr.strftime("%Y%m%d_%H%M%S") + '_img.' + format
+            img_name = datestr.strftime("%Y%m%d_%H%M%S_%f") + '_img.' + format
 
         if save_dir is not None:
             img_name = os.path.join(save_dir, img_name)
