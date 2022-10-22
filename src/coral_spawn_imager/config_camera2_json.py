@@ -148,3 +148,6 @@ if __name__ == '__main__':
     print('Read configuration: ')
     # print(config)
     print(config)
+
+    # import code
+    # code.interact(local=dict(globals(), **locals()))

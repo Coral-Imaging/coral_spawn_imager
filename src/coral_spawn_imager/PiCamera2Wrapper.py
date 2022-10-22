@@ -18,7 +18,7 @@ from libcamera import controls
 # github: 
 # https://github.com/raspberrypi/picamera2
 
-# from coral_spawn_imager.config_camera_json import read_json_config
+from config_camera2_json import read_json_config
 # from coral_spawn_imager.config_camera_ros import read_ros_param
 
 class PiCamera2Wrapper:
@@ -45,7 +45,8 @@ class PiCamera2Wrapper:
                  preview_type: str = 'remote'):
 
 
-
+        # TODO read in config file from config_camera2_json.py
+        
         # set default camera configurations
         self.camera_index = camera_index
         self.camera = Picamera2()
@@ -64,17 +65,50 @@ class PiCamera2Wrapper:
 
         # configure camera
         self.camera.configure(self.preview_config)
-        self.set_image_resolution(image_width, image_height) # setting image resolution must be called before camera.start()
-        self.camera.start()
+        
+        # config file for camera:
+        if config_file is not None:
+            conf = read_json_config(config_file)
+            self.apply_conf(conf)
+            self.camera.start()
+        else:
 
-        # set auto white balance
-        self.set_awb()
-        with self.camera.controls as ctrl:
-            ctrl.AeEnable = True
-        # controls to take effect
+            # set image resolution (must be done before camera.start())
+            self.set_image_resolution(image_width, image_height) # setting image resolution must be called before camera.start()
+            self.camera.start()
 
-        time.sleep(2)
+            # set auto white balance
+            self.set_awb()
+            with self.camera.controls as ctrl:
+                ctrl.AeEnable = True
+            # controls to take effect
+            time.sleep(2)
+        print('init end')
+
     
+    def apply_conf(self, conf):
+        print('applying config')
+        self.camera_index = conf.camera_index
+        self.image_width = conf.image_width
+        self.image_height = conf.image_height
+        self.set_image_resolution(self.image_width, self.image_height) # setting image resolution must be called before camera.start()
+        self.set_exposure_mode(conf.ae_enable) # TODO aeconstraint mode not yet working
+        self.set_gain(conf.gain)
+        self.set_awb(conf.awb_enable, conf.awb_mode, conf.red_gain, conf.blue_gain)
+        self.set_contrast(conf.contrast)
+        self.set_exposure_time(conf.exposure_time)
+        # self.set_exposure_value() # not yet implemented
+        # self.set_fps() # todo - receive from conf
+        # print('config frame duration')
+        # self.set_frame_duration_limits(conf.frame_duration_limits_min, conf.frame_duration_limits_max)
+        # print('config noise reduction')
+        # self.set_noise_reduction_mode(conf.noise_reduction_mode)
+        self.set_saturation(conf.saturation)
+        self.set_sharpness(conf.sharpness)
+        
+        time.sleep(2)
+
+
 
     # def show_preview(self, duration: int = 10, preview_type='remote'):
     #     # NOTE: only seems to be working for local
@@ -113,6 +147,10 @@ class PiCamera2Wrapper:
         self.camera.configure("video")
 
 
+    # def set_frame_duration_limits(self, frame_duration_min, frame_duration_max):
+    #     self.camera.set_controls({"FrameDurationLimits": (frame_duration_min, frame_duration_max)})
+
+
     def get_colour_gains(self):
         metadata = self.camera.capture_metadata()
         return metadata['ColourGains'] # (red_gain, blue_gain)
@@ -130,7 +168,7 @@ class PiCamera2Wrapper:
 
         print('setting white balance')
 
-        if red_gain is None and blue_gain is None:
+        if (red_gain is None and blue_gain is None) or (red_gain < 0.0 and blue_gain < 0.0):
             # automatic control
             control = {'AwbEnable': awb_enable,
                        'AwbMode': awb_mode_enum[awb_mode]}
@@ -150,16 +188,22 @@ class PiCamera2Wrapper:
 
     
     def set_exposure_mode(self, 
-                          ae_enable=None, 
-                          ae_constraint_mode=None):
+                          ae_enable=None):
+                        #   ae_constraint_mode=None):
+
+        # ae_mode_enum = {'Normal': controls.AeConstraintModeEnum.Normal,
+        #                  'Highlight': controls.AeConstraintModeEnum.Highlight,
+        #                  'Shadows': controls.AeConstraintModeEnum.Shadows,
+        #                  'Custom': controls.AeConstraintModeEnum.Custom}
+
         if ae_enable is not None:
             if type(ae_enable) is bool:
                 self.camera.set_controls({'AeEnable': ae_enable})
             else:
                 raise TypeError('ae_enable is not a valid bool')
         
-        if ae_constraint_mode is not None:
-            self.camera.set_controls({"AeConstraintMode": ae_constraint_mode})
+        # if ae_constraint_mode is not None:
+        #     self.camera.set_controls({"AeConstraintMode": ae_mode_enum[ae_constraint_mode]})
 
     def get_exposure_time(self):
         metadata = self.camera.capture_metadata()
@@ -183,11 +227,52 @@ class PiCamera2Wrapper:
             controls.AnalogueGain = gain
 
 
+    def get_contrast(self):
+        metadata = self.camera.capture_metadata()
+        return metadata['Contrast']
+
+
+    def set_contrast(self, contrast: float = 1.0):
+        with self.camera.controls as controls:
+            controls.Contrast = contrast
+
+
+    def get_noise_reduction_mode(self):
+        metadata = self.camera.capture_metadata()
+        return metadata['NoiseReductionMode']
+
+
+    # def set_noise_reduction_mode(self, noise_reduction_mode):
+    #     self.camera.set_controls({"NoiseReductionMode": noise_reduction_mode})
+        # with self.camera.controls as controls:
+        #     controls.NoiseReductionMode = noise_reduction_mode
+
+
+    def get_saturation(self):
+        metadata = self.camera.capture_metadata()
+        return metadata['Saturation']
+
+
+    def set_saturation(self, saturation):
+        self.camera.set_controls({'Saturation': saturation})
+
+
+    def get_sharpness(self):
+        metadata = self.camera.capture_metadata()
+        return metadata['Sharpness']
+
+
+    def set_sharpness(self, sharpness):
+        self.camera.set_controls({'Sharpness': sharpness})
+
+
     def get_params(self):
+        print('getting parameters')
         metadata = self.camera.capture_metadata()
         config = self.camera.camera_config
         controls = self.camera.camera_controls
         properties = self.camera.camera_properties
+        print('parameters received')
         # merge the two
         # params = controls.update(config)
         params = {'metadata': metadata, 
@@ -263,8 +348,9 @@ if __name__ == "__main__":
 
     print('PiCamera2Wrapper.py')
 
-    picam = PiCamera2Wrapper()
-    # picam.print()
+    picam = PiCamera2Wrapper(config_file='config_camera2.json')
+    print('picam print')
+    picam.print()
 
     # test image capture:
     img, img_name, metadata = picam.capture_image()
@@ -277,17 +363,17 @@ if __name__ == "__main__":
     # print(img_lo.shape)
 
     # set AWB to manual/set red/blue gains
-    red_gain = 1.0
-    blue_gain = 4.0
-    picam.set_awb(red_gain=red_gain, blue_gain=blue_gain)
-    # preview should automatically change
-    time.sleep(2)
-    picam.set_awb(awb_enable=True)
+    # red_gain = 1.0
+    # blue_gain = 4.0
+    # picam.set_awb(red_gain=red_gain, blue_gain=blue_gain)
+    # # preview should automatically change
+    # time.sleep(2)
+    # picam.set_awb(awb_enable=True)
 
-    picam.set_exposure_time(1000)
-    time.sleep(2)
-    picam.set_exposure_time(40000)
-    time.sleep(2)
+    # picam.set_exposure_time(1000)
+    # time.sleep(2)
+    # picam.set_exposure_time(40000)
+    # time.sleep(2)
     # preview should change back
     # time.sleep(10)
     # print('set higher res')
