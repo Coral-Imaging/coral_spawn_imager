@@ -6,11 +6,14 @@ from picamera2 import Picamera2, Preview
 # from libcamera import ColorSpace
 import time
 import os
-from PIL import Image
+from PIL import Image as pil_image
 import datetime
 from pprint import *
 import io
 from libcamera import controls
+import matplotlib.pyplot as plt
+import cv2 as cv
+import numpy as np
 
 
 # documentation: 
@@ -18,7 +21,7 @@ from libcamera import controls
 # github: 
 # https://github.com/raspberrypi/picamera2
 
-from config_camera2_json import read_json_config
+from coral_spawn_imager.config_camera2_json import read_json_config
 # from coral_spawn_imager.config_camera_ros import read_ros_param
 
 class PiCamera2Wrapper:
@@ -342,7 +345,20 @@ class PiCamera2Wrapper:
         metadata = self.camera.capture_metadata()
 
         return img, img_name, metadata
-    
+
+    def save_image(self, img, img_name):
+
+        base_path = os.path.basename(img_name)
+        if not os.path.isdir(base_path):
+            os.mkdir(base_path)
+        
+        if isinstance(img, pil_image.Image):
+            img.save(img_name)
+        elif isinstance(img, np.ndarray):
+            cv.imwrite(img_name, img)
+        else:
+            plt.imsave(img_name, img)
+
 
 if __name__ == "__main__":
 

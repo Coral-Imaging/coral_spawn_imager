@@ -19,7 +19,7 @@ from std_msgs.msg import String
 import os
 import subprocess
 
-from coral_spawn_imager.PiCameraWrapper import PiCameraWrapper
+from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
 
 """
 CameraTrigger: 
@@ -31,8 +31,10 @@ class CameraTrigger:
     CAMERA_TRIGGER_NODE_NAME = 'picam_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
     SAMPLE_SIZE = 5 # number of images captured in sequence after trigger is received
-    SAVE_IMAGE_DIR_SSD = '/media/pi/ssd01/images'
-    SAVE_IMAGE_DIR_CARD = '/home/pi/images'
+    SAVE_SSD = '/media/cslics04/ssd02'
+    SAVE_IMAGE_DIR_SSD = '/media/cslics04/ssd02/images'
+    SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
+
 
     def __init__(self, img_dir=None):
         
@@ -45,7 +47,7 @@ class CameraTrigger:
         self.rate = rospy.Rate(0.5) # 0.25 Hz
 
         # picamera object and configure based on ROS parameters
-        self.picam = PiCameraWrapper('ROS')
+        self.picam = PiCamera2Wrapper()
 
         if img_dir is None:
             if self.check_ssd():
@@ -70,9 +72,13 @@ class CameraTrigger:
         # capture n_imges
         for i in range(self.SAMPLE_SIZE):
             
-            img, img_name = self.capture_image()
+            img, img_name, metadata = self.capture_image()
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.img_dir, img_name)}')
-            img.save(os.path.join(self.img_dir, img_name))
+            # for pil images
+            # img.save(os.path.join(self.img_dir, img_name))
+            # for numpy arrays
+            self.picam.save_image(img, os.path.join(self.img_dir, img_name))
+
 
             self.rate.sleep()
         
@@ -82,8 +88,8 @@ class CameraTrigger:
     def capture_image(self):
 
         # TODO capture metadata and append to images?
-        img_pil, img_name = self.picam.capture_image_stream(save_dir=self.img_dir)
-        return img_pil, img_name
+        img_np, img_name, metadata = self.picam.capture_image(save_dir=self.img_dir)
+        return img_np, img_name, metadata
     
 
     def check_ssd(self):
@@ -95,8 +101,8 @@ class CameraTrigger:
 
         out = subprocess.check_output(["cat", "/proc/mounts"])
         out = str(out)
-        if out.find('/media/pi/ssd01') > 0:
-            rospy.loginfo('SSD mounted at /media/pi/ssd01')
+        if out.find(self.SAVE_SSD) > 0:
+            rospy.loginfo(f'SSD mounted at {self.SAVE_SSD}')
             return True
         else:
             return False
