@@ -1,0 +1,23 @@
+{
+    "camera_index": 1,
+    "image_width": 1920,
+    "image_height": 1080,
+    "AeConstraintMode": "Shadows",
+    "AeEnable": 1,
+    "AeExposureMode": "Long",
+    "AeMeteringMode": "Matrix",
+    "AnalogueGain": 6.0,
+    "AwbEnable": 1,
+    "AwbMode": "Auto",
+    "Brightness": 0.0,
+    "ColourGains_Red": 2.3,
+    "ColourGains_Blue": 2.3,
+    "Contrast": 1.0,
+    "ExposureTime": 10000,
+    "ExposureValue": 0.0,
+    "FrameDurationLimits_Min": 1000,
+    "FrameDurationLimits_Max": 4000,
+    "NoiseReductionMode": "Fast",
+    "Saturation": 1.0,
+    "Sharpness": 1.0
+}

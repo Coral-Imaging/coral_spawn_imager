@@ -28,10 +28,10 @@ class PiCamera2Wrapper:
 
     IMAGE_WIDTH_DEFAULT = int(4056/4)      # pixels
     IMAGE_HEIGHT_DEFAULT = int(3040/4)     # pixels
-    FPS_DEFAULT = 10.0              # frames per second
-    ANALOGUE_GAIN_DEFAULT = 4.0     # analogue gain (1-6?)
+    FPS_DEFAULT = 1.0              # frames per second
+    ANALOGUE_GAIN_DEFAULT = 20.0     # analogue gain (1-6?)
     EXPOSURE_TIME_DEFAULT = 60000   # exposure time in microseconds
-    INITIAL_PREVIEW_DURATION = 10   # initial preview time before turning off preview
+    # INITIAL_PREVIEW_DURATION = 10   # initial preview time before turning off preview
     
     EXPOSURE_LIMITS = (114, 239542228)  # microseconds
     # IMAGE_BUFFER_COUNT = 2         # buffer count, # of images allowed to memory (see 4.2.1.3 on docs)
@@ -104,8 +104,8 @@ class PiCamera2Wrapper:
         # self.set_frame_duration_limits(conf.frame_duration_limits_min, conf.frame_duration_limits_max)
         # print('config noise reduction')
         # self.set_noise_reduction_mode(conf.noise_reduction_mode)
-        self.set_saturation(conf.saturation)
-        self.set_sharpness(conf.sharpness)
+        # self.set_saturation(conf.saturation)
+        # self.set_sharpness(conf.sharpness)
         
         time.sleep(2)
 

@@ -30,13 +30,15 @@ class CameraTrigger:
 
     CAMERA_TRIGGER_NODE_NAME = 'picam_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
-    SAMPLE_SIZE = 55 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = 1 # Hz
+    SAMPLE_SIZE = 30 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = 0.5 # Hz
 
-    SAVE_SSD = '/media/cslics04/ssd02'
-    SAVE_IMAGE_DIR_SSD = '/media/cslics04/ssd02/images'
+    SAVE_SSD = '/media/cslics04/ssd03'
+    SAVE_IMAGE_DIR_SSD = '/media/cslics04/ssd03/images'
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
 
+
+    CAMERA_CONFIGURATION_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/camera_config_r223.json'
 
     def __init__(self, img_dir=None):
         
@@ -49,7 +51,7 @@ class CameraTrigger:
         self.rate = rospy.Rate(self.SAMPLE_RATE) # 0.25 Hz
 
         # picamera object and configure based on ROS parameters
-        self.picam = PiCamera2Wrapper()
+        self.picam = PiCamera2Wrapper(config_file=self.CAMERA_CONFIGURATION_FILE)
 
         if img_dir is None:
             if self.check_ssd():
