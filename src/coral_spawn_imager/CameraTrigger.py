@@ -33,8 +33,8 @@ class CameraTrigger:
     SAMPLE_SIZE = 30 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = 0.5 # Hz
 
-    SAVE_SSD = '/media/cslics04/ssd03'
-    SAVE_IMAGE_DIR_SSD = '/media/cslics04/ssd03/images'
+    SAVE_SSD = '/media/cslics04/cslics_ssd'
+    SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
 
 
