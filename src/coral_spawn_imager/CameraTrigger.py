@@ -30,7 +30,9 @@ class CameraTrigger:
 
     CAMERA_TRIGGER_NODE_NAME = 'picam_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
-    SAMPLE_SIZE = 5 # number of images captured in sequence after trigger is received
+    SAMPLE_SIZE = 55 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = 1 # Hz
+
     SAVE_SSD = '/media/cslics04/ssd02'
     SAVE_IMAGE_DIR_SSD = '/media/cslics04/ssd02/images'
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
@@ -44,7 +46,7 @@ class CameraTrigger:
         self.subscriber = rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, String, self.callback)
     
         # unsure of camera capture rate - need to check, but pertty sure it's slow atm
-        self.rate = rospy.Rate(0.5) # 0.25 Hz
+        self.rate = rospy.Rate(self.SAMPLE_RATE) # 0.25 Hz
 
         # picamera object and configure based on ROS parameters
         self.picam = PiCamera2Wrapper()
@@ -66,28 +68,24 @@ class CameraTrigger:
 
         rospy.loginfo('Trigger message received:')
         print(msg.data)
-        # n_img = int(msg.data)
-        # n_img = int(msg) # TODO for now, assume msg is a number
+
+        if not os.path.isdir(self.img_dir):
+            os.makedir(self.img_dir)
 
         # capture n_imges
         for i in range(self.SAMPLE_SIZE):
             
             img, img_name, metadata = self.capture_image()
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.img_dir, img_name)}')
-            # for pil images
-            # img.save(os.path.join(self.img_dir, img_name))
-            # for numpy arrays
             self.picam.save_image(img, os.path.join(self.img_dir, img_name))
-
-
             self.rate.sleep()
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
 
 
     def capture_image(self):
-
         # TODO capture metadata and append to images?
+        # TODO append metadata to image, or save as separate text file? ideally, want with cvat annotation.xml file
         img_np, img_name, metadata = self.picam.capture_image(save_dir=self.img_dir)
         return img_np, img_name, metadata
     
@@ -106,8 +104,6 @@ class CameraTrigger:
             return True
         else:
             return False
-
-
 
 
 if __name__ == '__main__':

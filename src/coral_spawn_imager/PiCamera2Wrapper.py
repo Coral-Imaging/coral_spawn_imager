@@ -86,11 +86,9 @@ class PiCamera2Wrapper:
                 ctrl.AeEnable = True
             # controls to take effect
             time.sleep(2)
-        print('init end')
 
     
     def apply_conf(self, conf):
-        print('applying config')
         self.camera_index = conf.camera_index
         self.image_width = conf.image_width
         self.image_height = conf.image_height
@@ -319,6 +317,7 @@ class PiCamera2Wrapper:
             slow framerate for hi-res image capture 
             automatically switches back to preview mode after capture """
         img_np = self.camera.switch_mode_and_capture_array(self.capture_config, 'main')
+        time.sleep(0.25) # added in sleep due to change in config?
         return img_np
 
 
@@ -348,9 +347,9 @@ class PiCamera2Wrapper:
 
     def save_image(self, img, img_name):
 
-        base_path = os.path.basename(img_name)
-        if not os.path.isdir(base_path):
-            os.mkdir(base_path)
+        # base_path = os.path.basename(img_name)
+        # if not os.path.isdir(base_path):
+        #     os.mkdir(base_path)
         
         if isinstance(img, pil_image.Image):
             img.save(img_name)
