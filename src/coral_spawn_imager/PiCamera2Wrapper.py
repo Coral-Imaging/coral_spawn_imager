@@ -355,6 +355,8 @@ class PiCamera2Wrapper:
         if isinstance(img, pil_image.Image):
             img.save(img_name)
         elif isinstance(img, np.ndarray):
+            # image is captured as RGB
+            img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
             cv.imwrite(img_name, img)
         else:
             plt.imsave(img_name, img)
