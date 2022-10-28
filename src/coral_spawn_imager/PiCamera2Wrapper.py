@@ -7,6 +7,7 @@ from picamera2 import Picamera2, Preview
 import time
 import os
 from PIL import Image as pil_image
+from PIL.PngImagePlugin import PngInfo
 import datetime
 from pprint import *
 import io
@@ -14,7 +15,7 @@ from libcamera import controls
 import matplotlib.pyplot as plt
 import cv2 as cv
 import numpy as np
-
+import json
 
 # documentation: 
 # https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
@@ -345,20 +346,51 @@ class PiCamera2Wrapper:
 
         return img, img_name, metadata
 
-    def save_image(self, img, img_name):
+    def read_custom_metadata(self, metadata_file):
+        # read custom metadata file and append it to the end of picamera metadata
+        # with open(metadata_file) as f:
+        #     metadata = f.read()
+        with open(metadata_file) as f:
+            metadata = json.load(f)
+        return metadata
+        
+
+    def update_metadata(self, pi_metadata, coral_metadata):
+        # combine pi camera and coral metadata into single dictionary
+        return pi_metadata.update(coral_metadata)
+
+
+    def save_image(self, img, img_name, metadata=None):
 
         # base_path = os.path.basename(img_name)
         # if not os.path.isdir(base_path):
         #     os.mkdir(base_path)
-        
-        if isinstance(img, pil_image.Image):
-            img.save(img_name)
-        elif isinstance(img, np.ndarray):
-            # image is captured as RGB
-            img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
-            cv.imwrite(img_name, img)
+        if metadata is not None:
+            # save using PIL, since PIL seems to be able to add/write custom metadata text fields:
+            # NOTE currently only works for .png image 
+            if img_name.find(".png"):
+                # do save image, assume metadata is a dictionary
+                # all metadata values must be of string type
+                md = PngInfo()
+                for key, value in metadata.items():
+                    md.add_text(str(key), str(value))
+                # make pil image:
+                img = pil_image.fromarray(img)
+                # save image with metadata
+                img.save(img_name, pnginfo=md)
+
+            else:
+                raise TypeError(img_name, "img_name does not have png in it; thus, img is not a png, only png saving with metadata is currently supported")
         else:
-            plt.imsave(img_name, img)
+            
+            if isinstance(img, pil_image.Image):
+                img.save(img_name)
+            elif isinstance(img, np.ndarray):
+                # image is captured as RGB
+                img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+                cv.imwrite(img_name, img)
+            else:
+                plt.imsave(img_name, img)
 
 
 if __name__ == "__main__":

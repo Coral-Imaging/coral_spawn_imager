@@ -9,6 +9,7 @@ email: dorian.tsai@gmail.com
 date: 2022/Oct/07
 """
 
+from coral_spawn_imager.metadata import CORAL_METADATA_FILE
 import rospy
 from std_msgs.msg import String
 # from sensor_msgs.msg import Image
@@ -39,6 +40,7 @@ class CameraTrigger:
 
 
     CAMERA_CONFIGURATION_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/camera_config_r223.json'
+    CORAL_METADATA_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/coral_metadata.json'
 
     def __init__(self, img_dir=None):
         
@@ -64,6 +66,9 @@ class CameraTrigger:
         os.makedirs(img_dir, exist_ok=True)
         self.img_dir = img_dir
 
+        self.coral_metadata = self.picam.read_custom_metadata(CORAL_METADATA_FILE)
+
+
 
     def callback(self, msg):
         """ read in trigger message string and interpret how many images to capture"""
@@ -79,7 +84,8 @@ class CameraTrigger:
             
             img, img_name, metadata = self.capture_image()
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.img_dir, img_name)}')
-            self.picam.save_image(img, os.path.join(self.img_dir, img_name))
+            self.picam.update_metadata(metadata, self.coral_metadata)
+            self.picam.save_image(img, os.path.join(self.img_dir, img_name), metadata)
             self.rate.sleep()
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
