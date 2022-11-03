@@ -23,6 +23,7 @@ import json
 # https://github.com/raspberrypi/picamera2
 
 from coral_spawn_imager.config_camera2_json import read_json_config
+from coral_spawn_imager.config_camera2_json import Config
 # from coral_spawn_imager.config_camera_ros import read_ros_param
 
 class PiCamera2Wrapper:
@@ -34,7 +35,7 @@ class PiCamera2Wrapper:
     EXPOSURE_TIME_DEFAULT = 60000   # exposure time in microseconds
     # INITIAL_PREVIEW_DURATION = 10   # initial preview time before turning off preview
     
-    EXPOSURE_LIMITS = (114, 239542228)  # microseconds
+    # EXPOSURE_LIMITS = (114, 239542228)  # microseconds
     # IMAGE_BUFFER_COUNT = 2         # buffer count, # of images allowed to memory (see 4.2.1.3 on docs)
 
     def __init__(self,
@@ -42,51 +43,83 @@ class PiCamera2Wrapper:
                  camera_index: int = 1,
                  image_width: int = IMAGE_WIDTH_DEFAULT,
                  image_height: int = IMAGE_HEIGHT_DEFAULT,
-                 gain: float = ANALOGUE_GAIN_DEFAULT,
-                 exposure_mode: str = 'auto',
-                 awb_mode: str = 'auto',
-                 exposure_time: int = EXPOSURE_TIME_DEFAULT,
-                 preview_type: str = 'remote'):
+                 gain: float = ANALOGUE_GAIN_DEFAULT):
 
 
-        # TODO read in config file from config_camera2_json.py
-        
         # set default camera configurations
         self.camera_index = camera_index
         self.camera = Picamera2()
         self.preview_config = self.camera.create_preview_configuration()
         self.capture_config = self.camera.create_still_configuration()
 
-        if preview_type == 'remote':
-            # allows port-forwarding for viewing remotely, but less efficient
-            self.camera.start_preview(Preview.QT) # QT costly, but designed for remote viewing
-        elif preview_type == 'null':
+        print(f'config_file: {config_file}')
+
+        if config_file is not None:
+            conf = read_json_config(config_file)
+            print('read config file')
+
+        else:
+            # default configuration - possibly redundant with config_camera2_json
+            print('Applying default camera configuration')
+            
+            conf = Config(
+                preview_type = 'remote',
+                camera_index = camera_index,
+                image_width = image_width,
+                image_height = image_height,
+                ae_constraint_mode = 'Shadows',
+                ae_enable = True,
+                ae_exposure_mode = "Short",
+                ae_metering_mode = "Matrix",
+                gain = gain,
+                awb_enable = "Auto",
+                awb_mode = True,
+                brightness = 0.0,
+                red_gain = 2.3,
+                blue_gain = 2.3,
+                contrast = 1.0,
+                exposure_time = 8000,
+                exposure_value = 0.0,
+                frame_duration_limits_max = 80000,
+                frame_duration_limits_min = 1000,
+                noise_reduction_mode = "Fast",
+                saturation = 1.0,
+                sharpness = 1.0
+            )
+        
+            
+        if conf.preview_type == 'null':
             # no preview
             self.camera.start_preview(Preview.NULL)
-        else:
+        elif conf.preview_type == 'local':
             # default to be run when running picamera locally
             self.camera.start_preview(Preview.QTGL)
+        elif conf.preview_type == 'remote':
+            # allows port-forwarding for viewing remotely, but less efficient
+            self.camera.start_preview(Preview.QT) # QT costly, but designed for remote viewing
+        else:
+            raise TypeError(conf.preview_type, f'conf.preview_type is not valid (remote, null, local): {conf.preview_type}')
 
         # configure camera
         self.camera.configure(self.preview_config)
         
         # config file for camera:
-        if config_file is not None:
-            conf = read_json_config(config_file)
-            self.apply_conf(conf)
-            self.camera.start()
-        else:
+        # if config_file is not None:
+            # conf = read_json_config(config_file)
+        self.apply_conf(conf)
+        self.camera.start()
+        # else:
 
-            # set image resolution (must be done before camera.start())
-            self.set_image_resolution(image_width, image_height) # setting image resolution must be called before camera.start()
-            self.camera.start()
+        #     # set image resolution (must be done before camera.start())
+        #     self.set_image_resolution(image_width, image_height) # setting image resolution must be called before camera.start()
+        #     self.camera.start()
 
             # set auto white balance
-            self.set_awb()
-            with self.camera.controls as ctrl:
-                ctrl.AeEnable = True
+            # self.set_awb()
+            # with self.camera.controls as ctrl:
+            #     ctrl.AeEnable = True
             # controls to take effect
-            time.sleep(2)
+            # time.sleep(2)
 
     
     def apply_conf(self, conf):
@@ -168,7 +201,7 @@ class PiCamera2Wrapper:
                          'Cloudy': 5,
                          'Custom': 6}
 
-        print('setting white balance')
+        # print('setting white balance')
 
         if (red_gain is None and blue_gain is None) or (red_gain < 0.0 and blue_gain < 0.0):
             # automatic control
@@ -197,7 +230,8 @@ class PiCamera2Wrapper:
         #                  'Highlight': controls.AeConstraintModeEnum.Highlight,
         #                  'Shadows': controls.AeConstraintModeEnum.Shadows,
         #                  'Custom': controls.AeConstraintModeEnum.Custom}
-
+        
+        ae_enable = bool(ae_enable)
         if ae_enable is not None:
             if type(ae_enable) is bool:
                 self.camera.set_controls({'AeEnable': ae_enable})
@@ -397,7 +431,7 @@ if __name__ == "__main__":
 
     print('PiCamera2Wrapper.py')
 
-    picam = PiCamera2Wrapper(config_file='config_camera2.json')
+    picam = PiCamera2Wrapper(config_file='../../launch/camera_config_seasim.json')
     print('picam print')
     picam.print()
 

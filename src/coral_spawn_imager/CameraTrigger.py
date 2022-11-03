@@ -9,7 +9,6 @@ email: dorian.tsai@gmail.com
 date: 2022/Oct/07
 """
 
-from coral_spawn_imager.metadata import CORAL_METADATA_FILE
 import rospy
 from std_msgs.msg import String
 # from sensor_msgs.msg import Image
@@ -38,13 +37,14 @@ class CameraTrigger:
     SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
 
-
-    CAMERA_CONFIGURATION_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/camera_config_r223.json'
+    CAMERA_CONFIGURATION_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/camera_config_seasim.json'
     CORAL_METADATA_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/coral_metadata.json'
 
     def __init__(self, img_dir=None):
-        
+
+        print('Initializing picam_trigger node')
         rospy.init_node(self.CAMERA_TRIGGER_NODE_NAME, anonymous=True)
+        
 
         # self.publisher = rospy.Publisher(self.PUBLISHER_TOPIC_NAME, Image, queue_size=10)
         self.subscriber = rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, String, self.callback)
@@ -53,6 +53,7 @@ class CameraTrigger:
         self.rate = rospy.Rate(self.SAMPLE_RATE) # 0.25 Hz
 
         # picamera object and configure based on ROS parameters
+        rospy.loginfo(f'cameratrigger: {self.CAMERA_CONFIGURATION_FILE}')
         self.picam = PiCamera2Wrapper(config_file=self.CAMERA_CONFIGURATION_FILE)
 
         if img_dir is None:
@@ -66,7 +67,7 @@ class CameraTrigger:
         os.makedirs(img_dir, exist_ok=True)
         self.img_dir = img_dir
 
-        self.coral_metadata = self.picam.read_custom_metadata(CORAL_METADATA_FILE)
+        self.coral_metadata = self.picam.read_custom_metadata(self.CORAL_METADATA_FILE)
 
 
 
@@ -92,8 +93,6 @@ class CameraTrigger:
 
 
     def capture_image(self):
-        # TODO capture metadata and append to images?
-        # TODO append metadata to image, or save as separate text file? ideally, want with cvat annotation.xml file
         img_np, img_name, metadata = self.picam.capture_image(save_dir=self.img_dir)
         return img_np, img_name, metadata
     
@@ -115,7 +114,9 @@ class CameraTrigger:
 
 
 if __name__ == '__main__':
+    
     try:
+        print('Running CameraTrigger.py')    
         CamPub = CameraTrigger()
         rospy.loginfo('Awaiting image trigger')
 

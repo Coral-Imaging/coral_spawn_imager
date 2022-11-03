@@ -12,6 +12,7 @@ from collections import namedtuple
 
 # configuration file definition
 Config = namedtuple('Config', [
+    'preview_type',
     'camera_index',
     'image_width',
     'image_height',
@@ -50,6 +51,7 @@ def read_json_config(config_file: str = None):
         from json import dump as json_dump
         with config_file.open('w') as fp:
             json_dump({
+                    "preview_type": 'remote',
                     "camera_index": 1,
                     "image_width": 1920,
                     "image_height": 1080,
@@ -75,6 +77,8 @@ def read_json_config(config_file: str = None):
         raise FileNotFoundError(f"No config file available, one has been created at '{config_file}'. Please fill it out.")
 
     # extract configuration file values
+
+    preview_type = str(conf.get('preview_type', 'remote'))
     camera_index = int(conf.get('camera_index', -1))
 
     # resolution_def = (2592, 1944)
@@ -118,27 +122,28 @@ def read_json_config(config_file: str = None):
     # HACK STOPPED HERE
     # package into namedtuple
     conf_return = Config(
-    camera_index = camera_index,
-    image_width = image_width,
-    image_height = image_height,
-    ae_constraint_mode = ae_constraint_mode,
-    ae_enable = ae_enable,
-    ae_exposure_mode = ae_exposure_mode,
-    ae_metering_mode = ae_metering_mode,
-    gain = gain,
-    awb_enable = awb_enable,
-    awb_mode = awb_mode,
-    brightness = brightness,
-    red_gain = red_gain,
-    blue_gain = blue_gain,
-    contrast = contrast,
-    exposure_time = exposure_time,
-    exposure_value = exposure_value,
-    frame_duration_limits_max = frame_duration_limits_max,
-    frame_duration_limits_min = frame_duration_limits_min,
-    noise_reduction_mode = noise_reduction_mode,
-    saturation = saturation,
-    sharpness = sharpness)
+        preview_type = preview_type,
+        camera_index = camera_index,
+        image_width = image_width,
+        image_height = image_height,
+        ae_constraint_mode = ae_constraint_mode,
+        ae_enable = ae_enable,
+        ae_exposure_mode = ae_exposure_mode,
+        ae_metering_mode = ae_metering_mode,
+        gain = gain,
+        awb_enable = awb_enable,
+        awb_mode = awb_mode,
+        brightness = brightness,
+        red_gain = red_gain,
+        blue_gain = blue_gain,
+        contrast = contrast,
+        exposure_time = exposure_time,
+        exposure_value = exposure_value,
+        frame_duration_limits_max = frame_duration_limits_max,
+        frame_duration_limits_min = frame_duration_limits_min,
+        noise_reduction_mode = noise_reduction_mode,
+        saturation = saturation,
+        sharpness = sharpness)
 
     return conf_return
 
