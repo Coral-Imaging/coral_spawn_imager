@@ -8,47 +8,31 @@ As part of the Reef Restoration and Adaptation Program (RRAP), the Coral Spawn a
 - Raspberry Pi Model 4B (<2 GB)
 - Raspberry Pi High Quality Camera
 - Microscope lens (TODO: get specifications)
+- external SSD named `cslics_ssd` connected to the Pi
+
 
 ## Installation Requirements
 
-- Raspberry Pi OS version 10 (Buster)
-- Enable legacy camera stack
-- Python 3.7.3
-- pip3 install picamera (v1.13)
-- cv-bridge (1.16.2)
-- numpy (1.21.6)
-- Pillow (9.2.0)
+Using `pip install X`:
 
-## Installation Instructions
+- Raspberry Pi OS version 11 (Bullseye), 64-bit
+- ROS Noetic on Raspberry Pi, 64-bit
+- matplotlib==3.6.1
+- numpy==1.19.5
+- picamera2==0.3.5
+- Pillow==9.3.0
+- rospy==1.15.14
+- tifffile==2022.10.10 (only for metadata_tiff.py, experimental)
 
-- Use raspberry Pi Imager for Raspbian OS Buster (legacy), because this has documented ROS Noetic support, while Bullseye does not. Consider migrating to Ubuntu 20.04 with picamera2, which is soon to be supported.
-- `sudo raspi-config` to enable ssh and legacy camera stack
-- Increase swap RAM to 1GB for faster compiles:
 
-      sudo dphys-swapfile swapoff
-	    sudo vim /etc/dphys-swapfile
-      
-- Change 100 MB to 1024 MB
+## Installation Instructions for Pi Setup
 
-      sudo dphys-swapfile setup
-      sudo dphys-swapfile swapon
-      
-- Install ROS Noetic directly (from Github Repos) because a number of ROS packages like RVIZ are not available for Debian Buster, and fail to compile from source. Most relevant packages do however still compile. We roughly follow the instructions from this tutorial (https://varhowto.com/install-ros-noetic-raspberry-pi-4/)  with the addition of relevant ROS image packages.
+- The simplest and fastest route of replication is to write a new image of the existing OS; however, to start from scratch, ceate a new install of Raspberry Pi OS Version 11, 64-bit using the Pi Imager.
+- Install ROS Noetic: https://wiki.qut.edu.au/pages/viewpage.action?spaceKey=cyphy&title=Technical+Handbook
+- Install QCR Bring-up services and daemon: `sudo apt install ros-noetic-perception ros-noetic-robot-bringup ros-noetic-roscore-daemon`
+- 
 
-      sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu buster main" > /etc/apt/sources.list.d/ros-noetic.list' 
-      sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-      sudo apt update
-      sudo apt-get install -y python3-rosdep python3-rosinstall-generator python3-wstool python3-rosinstall build-essential cmake
-      sudo rosdep init && rosdep update
-      mkdir ~/ros_catkin_ws && cd ~/ros_catkin_ws
-      rosinstall_generator ros_comm common_msgs image_common image_pipeline vision_opencv vision_msgs --rosdistro noetic --deps --wet-only --tar > noetic-ros_comm-vision-wet.rosinstall
-      wstool init src noetic-ros_comm-vision-wet.rosinstall
-      rosdep install -y --from-paths src --ignore-src --rosdistro noetic -r --os=debian:buster
-      
-- Compile ROS Noetic (this step can take several hours):
 
-      sudo src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/noetic -j1 -DPYTHON_EXECUTABLE=/usr/bin/python3
-      
 - Create a ROS workspace:
 
       mkdir ~/cslics_ws/src
@@ -63,41 +47,70 @@ As part of the Reef Restoration and Adaptation Program (RRAP), the Coral Spawn a
       cd ~/cslics_ws
       catkin_make
 
-- Source the workspace and packages within
+- Source the workspace and packages within as below, though it is recommended to add this line to the bottom of your .bashrc file so you never have to type this line again:
 
       source ~/cslics_ws/devel/setup.bash
 
-- coral_spawn_imager should be operational. Whenver changes to the packages are made, you need to recompile with catkin_make and source. 
+- coral_spawn_imager should be operational. 
+
 
 ## Usage Instructions
 
-Running the camera publisher:
+Running the camera trigger:
 
-      rosrun coral_spawn_imager camera_publisher.py
+      roslaunch coral_spawn_imager camera_trigger.py
 
-Running the camera subscriber:
 
-      rosrun coral_spawn_imager camera_subscriber.py
+## Camera Configuration Files
 
-## ROS Multple Computer Setup
+See `camera_config_seasim.json` as an example:
 
-- We refer to http://wiki.ros.org/ROS/NetworkSetup for the ROS network setup
-- In each computer, use `ifconfig` to get the ip addresses. Let's say we got 192.168.1.100 for the main `cslics` computer and 192.168.1.200 for `pi` imaging device. On both computers, set the hostnames:
+            {
+                  "preview_type": "remote",
+                  "camera_index": 3,
+                  "image_width": 1920,
+                  "image_height": 1080,
+                  "AeConstraintMode": "Shadows",
+                  "AeEnable": 1,
+                  "AeExposureMode": "Short",
+                  "AeMeteringMode": "Matrix",
+                  "AnalogueGain": 20.0,
+                  "AwbEnable": 1,
+                  "AwbMode": "Auto",
+                  "Brightness": 5.0,
+                  "ColourGains_Red": 2.3,
+                  "ColourGains_Blue": 2.3,
+                  "Contrast": 1.0,
+                  "ExposureTime": 8000,
+                  "ExposureValue": 0.0,
+                  "FrameDurationLimits_Min": 1000,
+                  "FrameDurationLimits_Max": 4000,
+                  "NoiseReductionMode": "Fast",
+                  "Saturation": 1.0,
+                  "Sharpness": 4.0
+            }
 
-      sudo vim /etc/hosts
 
-  And set `cslics 192.168.1.100` and on the next line, `pi 192.168.1.200`.
 
-- Ensure each computer can ping each other
-- On the main cslics computer: (note: unsure why ROS_IP has to be a valid IPv4/v6 address, can't it just use the alias from /etc/hosts? I got errors otherwise)
+## Headless Auto-Run Setup
 
-      export ROS_IP=192.168.1.100
-      export ROS_MASTER_URI=http://cslics:11311/
-      roscore
+- When running headless, we want the camera trigger node to launch automatically on start-up. For this, we use the qcr robot bringup. Control for this is in `/etc/qcr/qcr-env.bash` and editting the file as follows (requires sudo):
 
-- On the imaging device:
+      export ROS_WORKSPACE=/home/cslics04/cslics_ws/devel/setup.bash
+      export QCR_ROBOT_LAUNCH="roslaunch coral_spawn_imager camera_bringup.launch"
 
-      export ROS_IP=192.168.1.200
-      export ROS_MASTER_URI=http://cslics:11311/
+To start the service:
 
-- Then we should be able to run the publisher on the `pi`, and see the topics and read the values of the topics on the `cslics` computer
+      sudo service robot-bringup start
+
+To stop the service:
+
+      sudo service robot-bringup stop
+
+To restart the service:
+
+      sudo service robot-bringup restart
+
+To view the output of the service:
+
+      journalctl -u robot-bringup --follow --lines 500
