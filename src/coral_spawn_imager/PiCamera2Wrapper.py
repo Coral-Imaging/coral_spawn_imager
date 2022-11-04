@@ -30,13 +30,7 @@ class PiCamera2Wrapper:
 
     IMAGE_WIDTH_DEFAULT = int(4056/4)      # pixels
     IMAGE_HEIGHT_DEFAULT = int(3040/4)     # pixels
-    FPS_DEFAULT = 1.0              # frames per second
     ANALOGUE_GAIN_DEFAULT = 20.0     # analogue gain (1-6?)
-    EXPOSURE_TIME_DEFAULT = 60000   # exposure time in microseconds
-    # INITIAL_PREVIEW_DURATION = 10   # initial preview time before turning off preview
-    
-    # EXPOSURE_LIMITS = (114, 239542228)  # microseconds
-    # IMAGE_BUFFER_COUNT = 2         # buffer count, # of images allowed to memory (see 4.2.1.3 on docs)
 
     def __init__(self,
                  config_file: str = None,
@@ -56,12 +50,9 @@ class PiCamera2Wrapper:
 
         if config_file is not None:
             conf = read_json_config(config_file)
-            print('read config file')
-
         else:
             # default configuration - possibly redundant with config_camera2_json
             print('Applying default camera configuration')
-            
             conf = Config(
                 preview_type = 'remote',
                 camera_index = camera_index,
@@ -108,18 +99,7 @@ class PiCamera2Wrapper:
             # conf = read_json_config(config_file)
         self.apply_conf(conf)
         self.camera.start()
-        # else:
 
-        #     # set image resolution (must be done before camera.start())
-        #     self.set_image_resolution(image_width, image_height) # setting image resolution must be called before camera.start()
-        #     self.camera.start()
-
-            # set auto white balance
-            # self.set_awb()
-            # with self.camera.controls as ctrl:
-            #     ctrl.AeEnable = True
-            # controls to take effect
-            # time.sleep(2)
 
     
     def apply_conf(self, conf):
@@ -318,10 +298,7 @@ class PiCamera2Wrapper:
         return params
 
 
-    def print(self):
-        # print('sensor modes:')
-        # pprint(self.camera.sensor_modes)
-        
+    def print(self):        
         params = self.get_params()
         print('CAMERA properties: ')
         pprint(params['properties'])
@@ -352,7 +329,7 @@ class PiCamera2Wrapper:
             slow framerate for hi-res image capture 
             automatically switches back to preview mode after capture """
         img_np = self.camera.switch_mode_and_capture_array(self.capture_config, 'main')
-        time.sleep(0.25) # added in sleep due to change in config?
+        # time.sleep(0.25) # added in sleep due to change in config?
         return img_np
 
 
@@ -364,7 +341,7 @@ class PiCamera2Wrapper:
                                                  os.path.join(save_dir, img_name))
 
 
-    def capture_image(self, img_name=None, save_dir=None, format='jpeg'):
+    def capture_image(self, img_name=None, save_dir=None, format='png'):
         """
         capture and return a single image using numpy arrays
         """
@@ -395,6 +372,8 @@ class PiCamera2Wrapper:
 
 
     def save_image(self, img, img_name, metadata=None):
+        # TODO metadata is currently only supported for .png image types
+        # TODO needs to be refactored
 
         # base_path = os.path.basename(img_name)
         # if not os.path.isdir(base_path):
@@ -414,7 +393,14 @@ class PiCamera2Wrapper:
                 img.save(img_name, pnginfo=md)
 
             else:
-                raise TypeError(img_name, "img_name does not have png in it; thus, img is not a png, only png saving with metadata is currently supported")
+                # raise TypeError(img_name, "img_name does not have png in it; thus, img is not a png, only png saving with metadata is currently supported")
+                img = pil_image.fromarray(img)
+                img.save(img_name)
+                print('in-image metadata saving only supported for png format. Saving metadata as separate json file with the same img_name.json')
+                json_name = img_name[:-5] + '.json' # TODO make img format a self property or find the period
+                with open(json_name, "w") as f:
+                    json.dump(metadata, f)
+
         else:
             
             if isinstance(img, pil_image.Image):

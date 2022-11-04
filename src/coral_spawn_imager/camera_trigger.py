@@ -28,19 +28,24 @@ When this node receives a trigger from the subscribed topic, this node captures 
 
 class CameraTrigger:
 
-    CAMERA_TRIGGER_NODE_NAME = 'picam_trigger'
+    CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
-    SAMPLE_SIZE = 30 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = 0.5 # Hz
+    SAMPLE_SIZE = 10 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = 1.0/4.0 # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
 
-    CAMERA_CONFIGURATION_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/camera_config_seasim.json'
-    CORAL_METADATA_FILE = '/home/cslics04/cslics_ws/src/coral_spawn_imager/launch/coral_metadata.json'
+    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview.json'
+    CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
+
 
     def __init__(self, img_dir=None):
+
+        self.path = os.path.dirname(__file__) # get path to this file
+        print('Working directory: {}'.format(self.path))
+
 
         print('Initializing picam_trigger node')
         rospy.init_node(self.CAMERA_TRIGGER_NODE_NAME, anonymous=True)
@@ -53,8 +58,8 @@ class CameraTrigger:
         self.rate = rospy.Rate(self.SAMPLE_RATE) # 0.25 Hz
 
         # picamera object and configure based on ROS parameters
-        rospy.loginfo(f'cameratrigger: {self.CAMERA_CONFIGURATION_FILE}')
-        self.picam = PiCamera2Wrapper(config_file=self.CAMERA_CONFIGURATION_FILE)
+        rospy.loginfo(f'camera_trigger: {os.path.join(self.path, self.CAMERA_CONFIGURATION_FILE)}')
+        self.picam = PiCamera2Wrapper(config_file=os.path.join(self.path, self.CAMERA_CONFIGURATION_FILE))
 
         if img_dir is None:
             if self.check_ssd():
@@ -67,7 +72,7 @@ class CameraTrigger:
         os.makedirs(img_dir, exist_ok=True)
         self.img_dir = img_dir
 
-        self.coral_metadata = self.picam.read_custom_metadata(self.CORAL_METADATA_FILE)
+        self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
 
 
 
@@ -116,7 +121,7 @@ class CameraTrigger:
 if __name__ == '__main__':
     
     try:
-        print('Running CameraTrigger.py')    
+        print('Running camera_trigger.py')    
         CamPub = CameraTrigger()
         rospy.loginfo('Awaiting image trigger')
 

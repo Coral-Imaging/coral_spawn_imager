@@ -1,4 +1,4 @@
 <launch>
-<node pkg="coral_spawn_imager" type="CameraTrigger.py" name="camera_trigger" />
+<node pkg="coral_spawn_imager" type="camera_trigger.py" name="camera_trigger" />
 <node pkg="rrap_server" type="app" name="rrap_server" />
 </launch>
