@@ -1,10 +1,10 @@
 {
     "preview_type": "null",
     "camera_index": 3,
-    "image_width": 1920,
-    "image_height": 1080,
+    "image_width": 1014,
+    "image_height": 760,
     "AeConstraintMode": "Shadows",
-    "AeEnable": 1,
+    "AeEnable": 0,
     "AeExposureMode": "Short",
     "AeMeteringMode": "Matrix",
     "AnalogueGain": 20.0,

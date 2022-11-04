@@ -30,14 +30,14 @@ class CameraTrigger:
 
     CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
-    SAMPLE_SIZE = 10 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = 1.0/4.0 # Hz
+    SAMPLE_SIZE = 5 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = 1.0 # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
 
-    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview.json'
+    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_seasim.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
 
@@ -89,8 +89,10 @@ class CameraTrigger:
         for i in range(self.SAMPLE_SIZE):
             
             img, img_name, metadata = self.capture_image()
+            print(f'callback metadata: {metadata}')
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.img_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
+            print(f'updated metadata: {metadata}')
             self.picam.save_image(img, os.path.join(self.img_dir, img_name), metadata)
             self.rate.sleep()
         

@@ -356,7 +356,14 @@ class PiCamera2Wrapper:
 
         img = self.capture_with_config()
         metadata = self.camera.capture_metadata()
-
+        # print('before capture time')
+        # print(metadata)
+        # append capture_time string tag to metadata
+        metadata['capture_time'] = datestr.strftime("%Y%m%d_%H%M%S_%f")
+        # print(f'capture time: {datestr.strftime("%Y%m%d_%H%M%S_%f")}')
+        # print('after capture time')
+        # print(metadata)
+        
         return img, img_name, metadata
 
     def read_custom_metadata(self, metadata_file):
