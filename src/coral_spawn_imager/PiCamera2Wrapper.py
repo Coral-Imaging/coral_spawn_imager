@@ -94,6 +94,7 @@ class PiCamera2Wrapper:
         # configure camera
         self.camera.configure(self.preview_config)
         
+        self.camera_metadata = conf._asdict() # convert namedtuple to dictionary
         # config file for camera:
         # if config_file is not None:
             # conf = read_json_config(config_file)
@@ -298,7 +299,8 @@ class PiCamera2Wrapper:
         return params
 
 
-    def print(self):        
+    def print(self):
+        
         params = self.get_params()
         print('CAMERA properties: ')
         pprint(params['properties'])
@@ -367,7 +369,8 @@ class PiCamera2Wrapper:
         
 
     def update_metadata(self, pi_metadata, coral_metadata):
-        # combine pi camera and coral metadata into single dictionary
+        # combine pi image metadata, camnera (config) and coral metadata into single dictionary
+        pi_metadata.update(self.camera_metadata)
         return pi_metadata.update(coral_metadata)
 
 
