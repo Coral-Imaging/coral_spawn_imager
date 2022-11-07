@@ -89,10 +89,10 @@ class CameraTrigger:
         for i in range(self.SAMPLE_SIZE):
             
             img, img_name, metadata = self.capture_image()
-            print(f'callback metadata: {metadata}')
+            # print(f'callback metadata: {metadata}')
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.img_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
-            print(f'updated metadata: {metadata}')
+            # print(f'updated metadata: {metadata}')
             self.picam.save_image(img, os.path.join(self.img_dir, img_name), metadata)
             self.rate.sleep()
         
