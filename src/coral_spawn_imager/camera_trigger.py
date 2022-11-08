@@ -18,6 +18,7 @@ from std_msgs.msg import String
 # import numpy as np
 import os
 import subprocess
+import shutil
 
 from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
 
@@ -35,7 +36,10 @@ class CameraTrigger:
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
+    SAVE_IMAGE_DIR_SSD_TMP = '/media/cslics04/cslics_ssd/temp'
+
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
+    SAVE_IMAGE_DIR_CARD_TMP = '/tmp'
 
     CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_seasim.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
@@ -49,7 +53,6 @@ class CameraTrigger:
 
         print('Initializing picam_trigger node')
         rospy.init_node(self.CAMERA_TRIGGER_NODE_NAME, anonymous=True)
-        
 
         # self.publisher = rospy.Publisher(self.PUBLISHER_TOPIC_NAME, Image, queue_size=10)
         self.subscriber = rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, String, self.callback)
@@ -65,12 +68,16 @@ class CameraTrigger:
             if self.check_ssd():
                 # ssd is connected, we save images there:
                 img_dir = os.path.join(self.SAVE_IMAGE_DIR_SSD)
+                tmp_dir = os.path.join(self.SAVE_IMAGE_DIR_SSD_TMP)
             else:
                 img_dir = os.path.join(self.SAVE_IMAGE_DIR_CARD)
+                tmp_dir = os.path.join(self.SAVE_IMAGE_DIR_CARD_TMP)
         else:
             img_dir = img_dir
         os.makedirs(img_dir, exist_ok=True)
+        os.makedirs(tmp_dir, exist_ok=True)
         self.img_dir = img_dir
+        self.tmp_dir = tmp_dir
 
         self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
 
@@ -90,17 +97,21 @@ class CameraTrigger:
             
             img, img_name, metadata = self.capture_image()
             # print(f'callback metadata: {metadata}')
-            rospy.loginfo(f'Capture image: {i}: {os.path.join(self.img_dir, img_name)}')
+            rospy.loginfo(f'Capture image: {i}: {os.path.join(self.tmp_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
             # print(f'updated metadata: {metadata}')
-            self.picam.save_image(img, os.path.join(self.img_dir, img_name), metadata)
+            self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
+            
+            # save to tmp and then move to prevent downloading incomplete images from img_dir when saving image is in progress
+            shutil.move(os.path.join(self.tmp_dir, img_name), os.path.join(self.img_dir, img_name))
+
             self.rate.sleep()
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
 
 
     def capture_image(self):
-        img_np, img_name, metadata = self.picam.capture_image(save_dir=self.img_dir)
+        img_np, img_name, metadata = self.picam.capture_image()
         return img_np, img_name, metadata
     
 
