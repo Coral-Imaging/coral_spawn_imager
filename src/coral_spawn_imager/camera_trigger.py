@@ -31,8 +31,8 @@ class CameraTrigger:
 
     CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
-    SAMPLE_SIZE = 30 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = 1.0 # Hz
+    SAMPLE_SIZE = 20 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = (1.0/4.0) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
