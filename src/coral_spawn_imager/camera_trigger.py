@@ -31,7 +31,7 @@ class CameraTrigger:
 
     CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
-    SAMPLE_SIZE = 5 # number of images captured in sequence after trigger is received
+    SAMPLE_SIZE = 30 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = 1.0 # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
@@ -88,6 +88,9 @@ class CameraTrigger:
 
         rospy.loginfo('Trigger message received:')
         print(msg.data)
+
+        # update the coral metadata every trigger
+        self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
 
         if not os.path.isdir(self.img_dir):
             os.makedir(self.img_dir)
