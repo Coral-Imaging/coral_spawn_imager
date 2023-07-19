@@ -16,6 +16,7 @@ Software:
 
 - Note: had version control issues with this repo
 - Had to:
--         sudo pip uninstall opencv-python
--         sudo apt-get install libopencv-dev
--         sudp apt-get install python3-opencv
+
+        sudo pip uninstall opencv-python
+        sudo apt-get install libopencv-dev
+        sudp apt-get install python3-opencv
