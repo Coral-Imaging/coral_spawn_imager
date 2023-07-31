@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 import numpy as np
 import json
-
+import time
 # documentation: 
 # https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 # github: 
@@ -392,36 +392,51 @@ class PiCamera2Wrapper:
             # save using PIL, since PIL seems to be able to add/write custom metadata text fields:
             # NOTE currently only works for .png image 
             if img_name.find(".png"):
+                startImSave = time.time()
                 # do save image, assume metadata is a dictionary
                 # all metadata values must be of string type
                 md = PngInfo()
                 for key, value in metadata.items():
                     md.add_text(str(key), str(value))
+
+                startPilConvert = time.time()
                 # make pil image:
                 img = pil_image.fromarray(img)
+                saveImStep = time.time()
                 # save image with metadata
-                img.save(img_name, pnginfo=md)
+                img.save(img_name, pnginfo=md, compress_level=9)
 
-            else:
-                # raise TypeError(img_name, "img_name does not have png in it; thus, img is not a png, only png saving with metadata is currently supported")
-                img = pil_image.fromarray(img)
+                #print("metadata stuff = ", (startPilConvert - startImSave))
+                #print("make pil image = ", (saveImStep - startPilConvert))
+                #print("Save im 2 = ",(time.time() - saveImStep))
+            elif img_name.find(".jpg"):
+                jpgTime = time.time()
                 img.save(img_name)
-                print('in-image metadata saving only supported for png format. Saving metadata as separate json file with the same img_name.json')
-                json_name = img_name[:-5] + '.json' # TODO make img format a self property or find the period
-                with open(json_name, "w") as f:
-                    json.dump(metadata, f)
 
+                print("saved jpg im, time  = ", (time.time() - jpgTime))
+            #else:
+             #   print("Im name error, not saved")
+
+            #print('in-image metadata saving only supported for png format. Saving metadata as separate json file with the same img_name.json')
+            #jsonTimer = time.time()
+            #json_name = img_name[:-5] + '.json' # TODO make img format a self property or find the period
+            #with open(json_name, "w") as f:
+            #    json.dump(metadata, f)
+            #print("Json time", (time.time() - jsonTimer)
+        
         else:
             
             if isinstance(img, pil_image.Image):
                 img.save(img_name)
+                print("pil save")
             elif isinstance(img, np.ndarray):
                 # image is captured as RGB
                 img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
                 cv.imwrite(img_name, img)
+                print("cv save")
             else:
                 plt.imsave(img_name, img)
-
+                print("plt save")
 
 if __name__ == "__main__":
 

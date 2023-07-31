@@ -16,6 +16,7 @@ from std_msgs.msg import String
 # from PIL import Image as pilimage
 # from cv_bridge import CvBridge 
 # import numpy as np
+import time
 import os
 import subprocess
 import shutil
@@ -31,8 +32,8 @@ class CameraTrigger:
 
     CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
-    SAMPLE_SIZE = 20 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = (1.0/4.0) # Hz
+    SAMPLE_SIZE = 1 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = 10#(1.0/4.0) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
@@ -84,6 +85,7 @@ class CameraTrigger:
 
 
     def callback(self, msg):
+        startTime = time.time()
         """ read in trigger message string and interpret how many images to capture"""
 
         rospy.loginfo('Trigger message received:')
@@ -97,14 +99,17 @@ class CameraTrigger:
 
         # capture n_imges
         for i in range(self.SAMPLE_SIZE):
-            
-            img, img_name, metadata = self.capture_image()
+            imTime = time.time()
+            img, img_name, metadata = self.capture_image() 
+            print("time to capture image = ", (time.time() - imTime))
             # print(f'callback metadata: {metadata}')
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.tmp_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
             # print(f'updated metadata: {metadata}')
+            saveTime = time.time()
             self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
             
+            print("time to save image = ", (time.time() - saveTime))
             # save to tmp and then move to prevent downloading incomplete images from img_dir when saving image is in progress
             shutil.move(os.path.join(self.tmp_dir, img_name), os.path.join(self.img_dir, img_name))
 
@@ -114,7 +119,7 @@ class CameraTrigger:
 
 
     def capture_image(self):
-        img_np, img_name, metadata = self.picam.capture_image()
+        img_np, img_name, metadata = self.picam.capture_image(format = "jpg")
         return img_np, img_name, metadata
     
 
