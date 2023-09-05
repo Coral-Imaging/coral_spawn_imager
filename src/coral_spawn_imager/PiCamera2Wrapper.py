@@ -31,19 +31,22 @@ class PiCamera2Wrapper:
     IMAGE_WIDTH_DEFAULT = int(4056/4)      # pixels
     IMAGE_HEIGHT_DEFAULT = int(3040/4)     # pixels
     ANALOGUE_GAIN_DEFAULT = 20.0     # analogue gain (1-6?)
-
+    IMAGE_WIDTH_PREVIEW_DEFAULT = int(640)
+    IMAGE_HEIGHT_PREVIEW_DEFAULT = int(480)
+    
     def __init__(self,
                  config_file: str = None,
                  camera_index: int = 1,
                  image_width: int = IMAGE_WIDTH_DEFAULT,
                  image_height: int = IMAGE_HEIGHT_DEFAULT,
-                 gain: float = ANALOGUE_GAIN_DEFAULT):
-
+                 gain: float = ANALOGUE_GAIN_DEFAULT,
+                 image_width_preview: int = IMAGE_WIDTH_PREVIEW_DEFAULT,
+                 image_height_preview: int = IMAGE_HEIGHT_PREVIEW_DEFAULT):
 
         # set default camera configurations
         self.camera_index = camera_index
         self.camera = Picamera2()
-        self.preview_config = self.camera.create_preview_configuration()
+        self.preview_config = self.camera.create_preview_configuration(main={"size":(image_width_preview, image_height_preview)})
         self.capture_config = self.camera.create_still_configuration()
 
         print(f'config_file: {config_file}')
@@ -84,6 +87,7 @@ class PiCamera2Wrapper:
             self.camera.start_preview(Preview.NULL)
         elif conf.preview_type == 'local':
             # default to be run when running picamera locally
+            
             self.camera.start_preview(Preview.QTGL)
         elif conf.preview_type == 'remote':
             # allows port-forwarding for viewing remotely, but less efficient
@@ -486,3 +490,8 @@ if __name__ == "__main__":
 
     import code
     code.interact(local=dict(globals(), **locals()))
+    
+    picam.camera.stop_preview()
+    picam.camera.stop()
+    picam.camera.close()
+    
