@@ -28,8 +28,8 @@ from coral_spawn_imager.config_camera2_json import Config
 
 class PiCamera2Wrapper:
 
-    IMAGE_WIDTH_DEFAULT = int(4056/4)      # pixels
-    IMAGE_HEIGHT_DEFAULT = int(3040/4)     # pixels
+    IMAGE_WIDTH_DEFAULT = int(4056/2)      # pixels
+    IMAGE_HEIGHT_DEFAULT = int(3040/2)     # pixels
     ANALOGUE_GAIN_DEFAULT = 20.0     # analogue gain (1-6?)
     IMAGE_WIDTH_PREVIEW_DEFAULT = int(640)
     IMAGE_HEIGHT_PREVIEW_DEFAULT = int(480)
@@ -46,11 +46,9 @@ class PiCamera2Wrapper:
         # set default camera configurations
         self.camera_index = camera_index
         self.camera = Picamera2()
-        self.preview_config = self.camera.create_preview_configuration(main={"size":(image_width_preview, image_height_preview)})
-        self.capture_config = self.camera.create_still_configuration()
 
+        # NOTE config file image height/width settings will overwrite defaults here in PiCamera2Wrapper
         print(f'config_file: {config_file}')
-
         if config_file is not None:
             conf = read_json_config(config_file)
         else:
@@ -61,6 +59,8 @@ class PiCamera2Wrapper:
                 camera_index = camera_index,
                 image_width = image_width,
                 image_height = image_height,
+                image_width_preview = image_width_preview,
+                image_height_preview = image_height_preview,
                 ae_constraint_mode = 'Shadows',
                 ae_enable = True,
                 ae_exposure_mode = "Short",
@@ -80,8 +80,10 @@ class PiCamera2Wrapper:
                 saturation = 1.0,
                 sharpness = 1.0
             )
-        
             
+        self.preview_config = self.camera.create_preview_configuration(main={"size":(image_width_preview, image_height_preview)})
+        self.capture_config = self.camera.create_still_configuration(main={"size":(image_width, image_height)})
+
         if conf.preview_type == 'null':
             # no preview
             self.camera.start_preview(Preview.NULL)

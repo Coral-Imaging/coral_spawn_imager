@@ -2,6 +2,8 @@
     "camera_index": 6,
     "image_width": 1014,
     "image_height": 760,
+    "image_width_preview": 640,
+    "image_height_preview": 480,
     "AeConstraintMode": "Shadows",
     "AeEnable": 0,
     "AeExposureMode": "Short",

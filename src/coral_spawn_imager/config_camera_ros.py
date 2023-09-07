@@ -4,7 +4,7 @@
 # read camera configuration from ros launch file
 # apply them to picamera
 
-from picamera import PiCamera
+# from picamera import PiCamera
 import rospy
 import os
 from collections import namedtuple
@@ -14,6 +14,8 @@ Config = namedtuple('Config', [
     'iso',
     'image_width',
     'image_height',
+    'image_width_preview',
+    'image_height_preview',
     'red_gain',
     'blue_gain',
     'awb_mode',
@@ -31,6 +33,8 @@ def read_ros_param(launch_file=None):
     camera_index = rospy.get_param("/camera_index", 1)
     image_height = rospy.get_param("/image_height", 1920)
     image_width = rospy.get_param("/image_width", 1080)
+    image_height_preview = rospy.get_param("/image_height_preview", 640)
+    image_width_preview = rospy.get_param("/image_width_preview", 480)
     iso = rospy.get_param("/iso", 400)
     awb_mode = rospy.get_param("/awb_mode", 'auto')
     red_gain = rospy.get_param("/red_gain", -1.0)
@@ -44,6 +48,8 @@ def read_ros_param(launch_file=None):
         iso = iso,
         image_height = image_height,
         image_width = image_width,
+        image_height_preview= image_height_preview,
+        image_width_preview = image_width_preview,
         red_gain = red_gain,
         blue_gain = blue_gain,
         awb_mode = awb_mode,

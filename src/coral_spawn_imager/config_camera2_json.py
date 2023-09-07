@@ -16,6 +16,8 @@ Config = namedtuple('Config', [
     'camera_index',
     'image_width',
     'image_height',
+    'image_width_preview',
+    'image_height_preview',
     'ae_constraint_mode',
     'ae_enable',
     'ae_exposure_mode',
@@ -55,6 +57,8 @@ def read_json_config(config_file: str = None):
                     "camera_index": 1,
                     "image_width": 1920,
                     "image_height": 1080,
+                    "image_width_preview": 640,
+                    "image_height_preview": 480,
                     "AeConstraintMode": "Shadows",
                     "AeEnable": 1,
                     "AeExposureMode": "Long",
@@ -86,6 +90,12 @@ def read_json_config(config_file: str = None):
     image_height_def = 1944
     image_width = conf.get('image_width', image_width_def)
     image_height = conf.get('image_height', image_height_def)
+    
+    # resolution_def preview = (2592, 1944)
+    image_width_preview_def = 640
+    image_height_preview_def = 480
+    image_width_preview = conf.get('image_width_preview', image_width_preview_def)
+    image_height_preview = conf.get('image_height_preview', image_height_preview_def)
     
     # auto exposure setup
     ae_constraint_mode = str(conf.get('AeConstraintMode', 'Shadows'))
@@ -126,6 +136,8 @@ def read_json_config(config_file: str = None):
         camera_index = camera_index,
         image_width = image_width,
         image_height = image_height,
+        image_width_preview = image_width_preview,
+        image_height_preview = image_height_preview,
         ae_constraint_mode = ae_constraint_mode,
         ae_enable = ae_enable,
         ae_exposure_mode = ae_exposure_mode,
