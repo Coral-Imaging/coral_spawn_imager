@@ -349,7 +349,7 @@ class PiCamera2Wrapper:
                                                  os.path.join(save_dir, img_name))
 
 
-    def capture_image(self, img_name=None, save_dir=None, format='png'):
+    def capture_image(self, img_name=None, save_dir=None, format='jpeg'):
         """
         capture and return a single image using numpy arrays
         """
@@ -361,16 +361,11 @@ class PiCamera2Wrapper:
             img_name = os.path.join(save_dir, img_name)
 
         img = self.capture_with_config()
+        # picamera2-specific metadata related to image capture process
         metadata = self.camera.capture_metadata()
-        # print('before capture time')
-        # print(metadata)
-        # append capture_time string tag to metadata
-        metadata['capture_time'] = datestr.strftime("%Y%m%d_%H%M%S_%f")
-        # print(f'capture time: {datestr.strftime("%Y%m%d_%H%M%S_%f")}')
-        # print('after capture time')
-        # print(metadata)
-        
+        metadata['capture_time'] = datestr.strftime("%Y%m%d_%H%M%S_%f") # append capture_time string tag to metadata
         return img, img_name, metadata
+
 
     def read_custom_metadata(self, metadata_file):
         # read custom metadata file and append it to the end of picamera metadata
@@ -397,28 +392,27 @@ class PiCamera2Wrapper:
         if metadata is not None:
             # save using PIL, since PIL seems to be able to add/write custom metadata text fields:
             # NOTE currently only works for .png image 
-            if img_name.find(".png"):
-                # do save image, assume metadata is a dictionary
-                # all metadata values must be of string type
-                md = PngInfo()
-                for key, value in metadata.items():
-                    md.add_text(str(key), str(value))
-                # make pil image:
-                img = pil_image.fromarray(img)
-                # save image with metadata
-                img.save(img_name, pnginfo=md)
+            # if img_name.find(".png"):
+            #     # do save image, assume metadata is a dictionary
+            #     # all metadata values must be of string type
+            #     md = PngInfo()
+            #     for key, value in metadata.items():
+            #         md.add_text(str(key), str(value))
+            #     # make pil image:
+            #     img = pil_image.fromarray(img)
+            #     # save image with metadata
+            #     img.save(img_name, pnginfo=md)
 
-            else:
-                # raise TypeError(img_name, "img_name does not have png in it; thus, img is not a png, only png saving with metadata is currently supported")
-                img = pil_image.fromarray(img)
-                img.save(img_name)
-                print('in-image metadata saving only supported for png format. Saving metadata as separate json file with the same img_name.json')
-                json_name = img_name[:-5] + '.json' # TODO make img format a self property or find the period
-                with open(json_name, "w") as f:
-                    json.dump(metadata, f)
+            # else:
+            # raise TypeError(img_name, "img_name does not have png in it; thus, img is not a png, only png saving with metadata is currently supported")
+            img = pil_image.fromarray(img)
+            img.save(img_name)
+            print('in-image metadata saving only supported for png format. Saving metadata as separate json file with the same img_name.json')
+            json_name = img_name.split('.')[0] + '.json'
+            with open(json_name, "w") as f:
+                json.dump(metadata, f)
 
         else:
-            
             if isinstance(img, pil_image.Image):
                 img.save(img_name)
             elif isinstance(img, np.ndarray):
@@ -427,6 +421,13 @@ class PiCamera2Wrapper:
                 cv.imwrite(img_name, img)
             else:
                 plt.imsave(img_name, img)
+
+
+    def end_camera_operation(self):
+        # close preview, stop camera object, close
+        self.camera.stop_preview()
+        self.camera.stop()
+        self.camera.close()
 
 
 if __name__ == "__main__":
@@ -492,8 +493,5 @@ if __name__ == "__main__":
 
     import code
     code.interact(local=dict(globals(), **locals()))
-    
-    picam.camera.stop_preview()
-    picam.camera.stop()
-    picam.camera.close()
+
     
