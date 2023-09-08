@@ -24,6 +24,8 @@ import json
 
 from coral_spawn_imager.config_camera2_json import read_json_config
 from coral_spawn_imager.config_camera2_json import Config
+from coral_spawn_imager.ArducamFocuser import ArducamFocuser
+
 # from coral_spawn_imager.config_camera_ros import read_ros_param
 
 class PiCamera2Wrapper:
@@ -33,6 +35,7 @@ class PiCamera2Wrapper:
     ANALOGUE_GAIN_DEFAULT = 20.0     # analogue gain (1-6?)
     IMAGE_WIDTH_PREVIEW_DEFAULT = int(640)
     IMAGE_HEIGHT_PREVIEW_DEFAULT = int(480)
+    CAMERA_TYPES = ['RaspberryPi_HighQualityCamera', 'Arducam_RemoteFocusCamera']
     
     def __init__(self,
                  config_file: str = None,
@@ -78,18 +81,19 @@ class PiCamera2Wrapper:
                 frame_duration_limits_min = 1000,
                 noise_reduction_mode = "Fast",
                 saturation = 1.0,
-                sharpness = 1.0
+                sharpness = 1.0,
+                camera_type = 'RaspberryPi_HighQualityCamera',
+                remote_focus = 0
             )
             
-        self.preview_config = self.camera.create_preview_configuration(main={"size":(image_width_preview, image_height_preview)})
-        self.capture_config = self.camera.create_still_configuration(main={"size":(image_width, image_height)})
+        self.preview_config = self.camera.create_preview_configuration(main={"size":(conf.image_width_preview, conf.image_height_preview)})
+        self.capture_config = self.camera.create_still_configuration(main={"size":(conf.image_width, conf.image_height)})
 
         if conf.preview_type == 'null':
             # no preview
             self.camera.start_preview(Preview.NULL)
         elif conf.preview_type == 'local':
             # default to be run when running picamera locally
-            
             self.camera.start_preview(Preview.QTGL)
         elif conf.preview_type == 'remote':
             # allows port-forwarding for viewing remotely, but less efficient
@@ -105,15 +109,29 @@ class PiCamera2Wrapper:
         # if config_file is not None:
             # conf = read_json_config(config_file)
         self.apply_conf(conf)
+        self.config = conf
         self.camera.start()
-
+        time.sleep(2)
+        print(f'camera_type = {conf.camera_type}')
+        if conf.camera_type == "Arducam_RemoteFocusCamera":
+            # from the Arducam documentation,
+            # Set i2c bus, for A02 is 6, for B01 is 7 or 8, for Jetson Xavier NX it is 9 and 10.
+            # Note: raspberry pi seems to respond to the same architecture as Jetson Xavier
+            i2c_bus = 10
+            self.focuser = ArducamFocuser(i2c_bus)
+            
+        else:
+            self.focuser = None
+        # NOTE: remote_focus must be set after camera is started
+        self.set_remote_focus(conf.remote_focus)
+    # end of __init__            
 
     
     def apply_conf(self, conf):
         self.camera_index = conf.camera_index
-        self.image_width = conf.image_width
-        self.image_height = conf.image_height
-        self.set_image_resolution(self.image_width, self.image_height) # setting image resolution must be called before camera.start()
+        # self.image_width = conf.image_width
+        # self.image_height = conf.image_height
+        # self.set_image_resolution(self.image_width, self.image_height) # setting image resolution must be called before camera.start()
         self.set_exposure_mode(conf.ae_enable) # TODO aeconstraint mode not yet working
         self.set_gain(conf.gain)
         self.set_awb(conf.awb_enable, conf.awb_mode, conf.red_gain, conf.blue_gain)
@@ -128,9 +146,41 @@ class PiCamera2Wrapper:
         # self.set_saturation(conf.saturation)
         # self.set_sharpness(conf.sharpness)
         
+        
         time.sleep(2)
 
 
+    def set_remote_focus(self, remote_focus: int = 0):
+        """ remote focus for arducam
+        remote_focus < 0 -> no remote focus, assume static fixed focus lens
+        remote_focus >= 0 -> remote focus-able lens
+        0 - far-focus to infinity
+        1000 - near-focus to 2 cm distance
+        """
+        if self.focuser is not None:
+            print(f'remote_focus: {remote_focus}')
+            if remote_focus >= 0 and remote_focus <= 1000:
+                self.focuser.set(self.focuser.OPT_FOCUS, remote_focus)
+                time.sleep(2)
+                return True
+            else:
+                # TODO probably should be Input/ValueError
+                print(f'remote_focus invalid: {remote_focus}. Should be (0, 1000)')
+                return False
+        else:
+            return False
+        
+        
+    def get_remote_focus(self):
+        """
+        get remote focus value (0,1000)
+        """
+        if self.focuser is not None:
+            return self.focuser.get(self.focuser.OPT_FOCUS)
+        else:
+            return False
+            
+            
 
     # def show_preview(self, duration: int = 10, preview_type='remote'):
     #     # NOTE: only seems to be working for local
@@ -159,6 +209,7 @@ class PiCamera2Wrapper:
     def set_image_resolution(self, width: int, height: int, stream: str='preview'):
         # for main/high-res images, note: must be run before camera.start()
         # width, height must be no less than 64
+        # NOTE does not seem to work
         self.camera.preview_configuration.main.size = (width, height)
         self.camera.preview_configuration.align()
         self.camera.configure(stream)
@@ -434,7 +485,7 @@ if __name__ == "__main__":
 
     print('PiCamera2Wrapper.py')
 
-    picam = PiCamera2Wrapper(config_file='../../launch/camera_config_seasim.json')
+    picam = PiCamera2Wrapper(config_file='../../launch/camera_config_dev.json')
     print('picam print')
     picam.print()
 
@@ -443,6 +494,7 @@ if __name__ == "__main__":
     pprint(metadata)
     print(img_name)
     print(img.shape)
+
 
     # test normal low-res image capture
     # img_lo = picam.capture_image_np()
@@ -471,6 +523,15 @@ if __name__ == "__main__":
     # picam.stop_preview(5)
     # picam.show_preview(20)
 
+    print('testing remote focus')
+    print(f'remote_focus: {picam.config.remote_focus}')
+    print(f'camera_type: {picam.config.camera_type}')
+    print(f'current focus: {picam.get_remote_focus()}')
+    remote_focus = 900
+    print(f'set focus to {remote_focus}')
+    picam.set_remote_focus(remote_focus)
+    print(f'new focus: {picam.get_remote_focus()}')
+    
 # set camera configuration, parameters of the camera that are set at runtime and cannot be changed until the camera is restarted
 # image resolution for main stream & low-res stream
 # color_space
@@ -494,4 +555,4 @@ if __name__ == "__main__":
     import code
     code.interact(local=dict(globals(), **locals()))
 
-    
+    picam.end_camera_operation()

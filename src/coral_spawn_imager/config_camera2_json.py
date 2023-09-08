@@ -35,7 +35,9 @@ Config = namedtuple('Config', [
     'frame_duration_limits_max',
     'noise_reduction_mode',
     'saturation',
-    'sharpness'
+    'sharpness',
+    'remote_focus',
+    'camera_type'
 ])
 
 def read_json_config(config_file: str = None):
@@ -76,12 +78,14 @@ def read_json_config(config_file: str = None):
                     "FrameDurationLimits_Max": 80000,
                     "NoiseReductionMode": "Fast",
                     "Saturation": 1.0,
-                    "Sharpness": 1.0
+                    "Sharpness": 1.0,
+                    "remote_focus": 0,
+                    "camera_type": "RaspberryPi_HighQualityCamera"
             }, fp, indent=4)
         raise FileNotFoundError(f"No config file available, one has been created at '{config_file}'. Please fill it out.")
 
     # extract configuration file values
-
+    
     preview_type = str(conf.get('preview_type', 'remote'))
     camera_index = int(conf.get('camera_index', -1))
 
@@ -129,6 +133,9 @@ def read_json_config(config_file: str = None):
     saturation = float(conf.get('Saturation', 1.0))
     sharpness = float(conf.get('Sharpness', 1.0))
     
+    remote_focus = int(conf.get('remote_focus', 0))
+    camera_type = str(conf.get('camera_type', 'RaspberryPi_HighQualityCamera'))
+    
     # HACK STOPPED HERE
     # package into namedtuple
     conf_return = Config(
@@ -155,13 +162,15 @@ def read_json_config(config_file: str = None):
         frame_duration_limits_min = frame_duration_limits_min,
         noise_reduction_mode = noise_reduction_mode,
         saturation = saturation,
-        sharpness = sharpness)
+        sharpness = sharpness,
+        remote_focus = remote_focus,
+        camera_type = camera_type)
 
     return conf_return
 
 
 if __name__ == '__main__':
-    config = read_json_config()
+    config = read_json_config('../../launch/camera_config_dev.json')
     print('Read configuration: ')
     # print(config)
     print(config)
