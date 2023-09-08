@@ -4,6 +4,7 @@
 project: coral_spawn_imager 
 file: camera publisher
 A ROS node that publishes picam status and images from HQ picam at set intervals
+newly-added is remote_focus subscriber
 author: Dorian Tsai
 email: dorian.tsai@gmail.com
 date: 2022/Oct/07
@@ -11,6 +12,7 @@ date: 2022/Oct/07
 
 import rospy
 from std_msgs.msg import String
+from std_msgs.msg import Int16
 # from sensor_msgs.msg import Image
 # from picamera import PiCamera
 # from PIL import Image as pilimage
@@ -31,6 +33,7 @@ class CameraTrigger:
 
     CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
+    REMOTE_FOCUS_SUBSCRIBER_TOPIC_NAME = 'remote_focus'
     SAMPLE_SIZE = 20 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = (1.0/4.0) # Hz
 
@@ -41,7 +44,7 @@ class CameraTrigger:
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
     SAVE_IMAGE_DIR_CARD_TMP = '/tmp'
 
-    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_seasim.json'
+    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_dev.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
 
@@ -56,7 +59,8 @@ class CameraTrigger:
 
         # self.publisher = rospy.Publisher(self.PUBLISHER_TOPIC_NAME, Image, queue_size=10)
         self.subscriber = rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, String, self.callback)
-    
+
+        
         # unsure of camera capture rate - need to check, but pertty sure it's slow atm
         self.rate = rospy.Rate(self.SAMPLE_RATE) # 0.25 Hz
 
@@ -64,6 +68,10 @@ class CameraTrigger:
         rospy.loginfo(f'camera_trigger: {os.path.join(self.path, self.CAMERA_CONFIGURATION_FILE)}')
         self.picam = PiCamera2Wrapper(config_file=os.path.join(self.path, self.CAMERA_CONFIGURATION_FILE))
 
+        # for remote focus:
+        self.remote_focus_subscriber = rospy.Subscriber(self.REMOTE_FOCUS_SUBSCRIBER_TOPIC_NAME, Int16, self.remote_focus_callback)
+        
+        
         if img_dir is None:
             if self.check_ssd():
                 # ssd is connected, we save images there:
@@ -87,7 +95,7 @@ class CameraTrigger:
         """ read in trigger message string and interpret how many images to capture"""
 
         rospy.loginfo('Trigger message received:')
-        print(msg.data)
+        print(msg.data) # msg.data unused at the moment
 
         # update the coral metadata every trigger
         self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
@@ -112,6 +120,18 @@ class CameraTrigger:
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
 
+
+    def remote_focus_callback(self, msg):
+        """ read in remote_focus message string and interpret setting the remote focus of the arducam camera"""
+        rospy.loginfo('Remote_focus message received:')
+        print(msg.data)
+        
+        remote_focus = int(msg.data)
+        rospy.loginfo(f'Set remote focus: {remote_focus}')
+        self.picam.set_remote_focus(remote_focus)
+        rospy.loginfo(f'Get remote focus: {self.picam.get_remote_focus()}')
+        
+        
 
     def capture_image(self):
         img_np, img_name, metadata = self.picam.capture_image()

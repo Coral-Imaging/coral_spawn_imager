@@ -114,3 +114,12 @@ To restart the service:
 To view the output of the service:
 
       journalctl -u robot-bringup --follow --lines 500
+
+
+## Remote focus setup
+
+publish to /remote_focus subscriber
+
+rostopic echo /remote_focus
+
+rostopic pub /remote_focus std_msgs/Int16 "data: 100"
