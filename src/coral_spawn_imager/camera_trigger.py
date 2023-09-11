@@ -21,8 +21,11 @@ from std_msgs.msg import Int16
 import os
 import subprocess
 import shutil
+import time
+
 
 from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
+from ultralytics import YOLO
 
 """
 CameraTrigger: 
@@ -47,6 +50,8 @@ class CameraTrigger:
     CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_dev.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
+    SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
+
 
     def __init__(self, img_dir=None):
 
@@ -60,7 +65,6 @@ class CameraTrigger:
         # self.publisher = rospy.Publisher(self.PUBLISHER_TOPIC_NAME, Image, queue_size=10)
         self.subscriber = rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, String, self.callback)
 
-        
         # unsure of camera capture rate - need to check, but pertty sure it's slow atm
         self.rate = rospy.Rate(self.SAMPLE_RATE) # 0.25 Hz
 
@@ -71,6 +75,9 @@ class CameraTrigger:
         # for remote focus:
         self.remote_focus_subscriber = rospy.Subscriber(self.REMOTE_FOCUS_SUBSCRIBER_TOPIC_NAME, Int16, self.remote_focus_callback)
         
+        # for onboard detection:
+        # TODO load detection models
+        self.model = YOLO(self.SURFACE_DETECTION_MODEL_FILE)
         
         if img_dir is None:
             if self.check_ssd():
@@ -110,6 +117,18 @@ class CameraTrigger:
             # print(f'callback metadata: {metadata}')
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.tmp_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
+            
+            # TODO apply surface detection model
+            pred = self.model.predict(source=img,
+                                      save=True,
+                                      save_txt=True,
+                                      save_conf=True,
+                                      imgsz=640,
+                                      conf=0.5)
+            # TODO where to save the results?
+            
+            # TODO apply sub-surface detection model
+            
             # print(f'updated metadata: {metadata}')
             self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
             
