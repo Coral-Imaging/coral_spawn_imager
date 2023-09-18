@@ -15,17 +15,22 @@ from std_msgs.msg import String
 from std_msgs.msg import Int16
 # from sensor_msgs.msg import Image
 # from picamera import PiCamera
-# from PIL import Image as pilimage
+from PIL import Image as pilimage
 # from cv_bridge import CvBridge 
-# import numpy as np
 import os
 import subprocess
 import shutil
-import time
 
+import cv2 as cv 
+import numpy as np
+import time
+import glob
+import code
+import random
 
 from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
 from ultralytics import YOLO
+from ultralytics.engine.results import Results, Boxes
 
 """
 CameraTrigger: 
@@ -37,7 +42,7 @@ class CameraTrigger:
     CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
     REMOTE_FOCUS_SUBSCRIBER_TOPIC_NAME = 'remote_focus'
-    SAMPLE_SIZE = 20 # number of images captured in sequence after trigger is received
+    SAMPLE_SIZE = 2 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = (1.0/4.0) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
@@ -52,6 +57,8 @@ class CameraTrigger:
 
     SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
 
+    # when simulating image capture, default directory for simulated surface images
+    IMG_SRC_DIR = '/home/cslics04/cslics_ws/src/coral_spawn_imager/sample_images/surface'
 
     def __init__(self, img_dir=None):
 
@@ -112,22 +119,27 @@ class CameraTrigger:
 
         # capture n_imges
         for i in range(self.SAMPLE_SIZE):
-            
-            img, img_name, metadata = self.capture_image()
             # print(f'callback metadata: {metadata}')
+            
+            img, img_name, metadata = self.capture_image(SIM=True)
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.tmp_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
             
-            # TODO apply surface detection model
+            # apply surface detection model
             pred = self.model.predict(source=img,
                                       save=True,
-                                      save_txt=True,
+                                      save_txt=True, # later set to false, or figure out if can pt to text
                                       save_conf=True,
                                       imgsz=640,
                                       conf=0.5)
-            # TODO where to save the results?
+            # save results to text
+            boxes: Boxes = pred[0].boxes   
+            txt_name = img_name.rsplit('.')[0] + '.txt'
+            self.save_predictions(boxes, os.path.join(self.img_dir, txt_name))
             
             # TODO apply sub-surface detection model
+            
+            # TODO draw/save image detections?
             
             # print(f'updated metadata: {metadata}')
             self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
@@ -139,6 +151,25 @@ class CameraTrigger:
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
 
+    def save_predictions(self, boxes: Boxes, file: str):
+        """ save predictions (boxes) to text file"""  
+        lines = []
+        for b in boxes:
+            cls = str(int(b.cls))
+            conf = str(float(b.conf))
+            xyxyn = b.xyxyn.numpy()[0]
+            x1n = str(xyxyn[0])
+            y1n = str(xyxyn[1])
+            x2n = str(xyxyn[2])
+            y2n = str(xyxyn[3])
+            # TODO format for YOLO .txt file
+            array_str = cls+' '+x1n+' '+y1n+' '+x2n+' '+y2n+' '+conf+'\n'
+            lines.append(array_str)
+        
+        with open(file, 'w') as f:
+            f.writelines(lines) 
+
+        return True
 
     def remote_focus_callback(self, msg):
         """ read in remote_focus message string and interpret setting the remote focus of the arducam camera"""
@@ -150,15 +181,33 @@ class CameraTrigger:
         self.picam.set_remote_focus(remote_focus)
         rospy.loginfo(f'Get remote focus: {self.picam.get_remote_focus()}')
         
-        
 
-    def capture_image(self):
-        img_np, img_name, metadata = self.picam.capture_image()
+    def capture_image(self, SIM=True):
+        """ capture_image: 
+        if SIM is true: grab image/metadata from folder
+        else: captures an image/metadata from pi camera """
+        if SIM:
+            img_list = sorted(glob.glob(os.path.join(self.IMG_SRC_DIR, '*.jpg')))
+            print(f'length of img_list: {len(img_list)}')
+            i = random.randint(0, len(img_list))
+            img_np = cv.imread(img_list[i])
+            img_name = os.path.basename(img_list[i])
+            image_pil = pilimage.open(img_list[i])
+            metadata_exif = image_pil.getexif()
+            metadata = {
+                "Filename": image_pil.filename,
+                "Image Size": image_pil.size,
+                "Image Height": image_pil.height,
+                "Image Width": image_pil.width,
+                "Image Format": image_pil.format,
+                "Image Mode": image_pil.mode # TODO other metadata_exif info (opt)
+            }
+        else:
+            img_np, img_name, metadata = self.picam.capture_image()
         return img_np, img_name, metadata
     
 
     def check_ssd(self):
-
         # call system process to see if ssd is mounted
         # if connected and mounted, ssd will appear as "/media/pi/ssd01"
         # thus, we search the output for the above string, if we find it, 
