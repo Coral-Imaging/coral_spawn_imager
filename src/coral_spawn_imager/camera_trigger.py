@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 """
 project: coral_spawn_imager 
@@ -13,6 +13,9 @@ date: 2022/Oct/07
 import rospy
 from std_msgs.msg import String
 from std_msgs.msg import Int16
+from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import Image
+
 # from sensor_msgs.msg import Image
 # from picamera import PiCamera
 from PIL import Image as pilimage
@@ -21,6 +24,7 @@ import os
 import subprocess
 import shutil
 
+from cv_bridge import CvBridge
 import cv2 as cv 
 import numpy as np
 import time
@@ -42,6 +46,9 @@ class CameraTrigger:
     CAMERA_TRIGGER_NODE_NAME = 'camera_trigger'
     SUBSCRIBER_TOPIC_NAME = 'trigger'
     REMOTE_FOCUS_SUBSCRIBER_TOPIC_NAME = 'remote_focus'
+    IMAGE_PUBLISHER_NAME = 'image'
+    # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
+    
     SAMPLE_SIZE = 2 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = (1.0/4.0) # Hz
 
@@ -70,7 +77,7 @@ class CameraTrigger:
         rospy.init_node(self.CAMERA_TRIGGER_NODE_NAME, anonymous=True)
 
         # self.publisher = rospy.Publisher(self.PUBLISHER_TOPIC_NAME, Image, queue_size=10)
-        self.subscriber = rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, String, self.callback)
+        self.subscriber = rospy.Subscriber(self.SUBSCRIBER_TOPIC_NAME, String, self.camera_trigger_callback)
 
         # unsure of camera capture rate - need to check, but pertty sure it's slow atm
         self.rate = rospy.Rate(self.SAMPLE_RATE) # 0.25 Hz
@@ -81,6 +88,12 @@ class CameraTrigger:
 
         # for remote focus:
         self.remote_focus_subscriber = rospy.Subscriber(self.REMOTE_FOCUS_SUBSCRIBER_TOPIC_NAME, Int16, self.remote_focus_callback)
+
+        # for image display via ROS
+        self.image_pub = rospy.Publisher(self.IMAGE_PUBLISHER_NAME, Image, queue_size=10)
+        
+        # subscriber to start publishing image
+        # self.image_sub = rospy.Subscriber(self.IMAGE_SUBSCRIBER_NAME, Image, self.image_preview_callback, queue_size=1)
         
         # for onboard detection:
         # TODO load detection models
@@ -104,8 +117,26 @@ class CameraTrigger:
         self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
 
 
+    # def image_preview_callback(self, msg):
+    #     """ subscriber that triggers image preview publishing, blocks camera_trigger until done """
+        
+    #     rospy.loginfo('image preview message received:')
+        
+    #     # get image from picam
+    #     img, img_name, metadata = self.capture_image(SIM=False)
+        
+    #     # publish 
+    #     #### Create CompressedImage ####
+    #     # msg = CompressedImage()
+    #     # msg.header.stamp = rospy.Time.now()
+    #     # msg.format = "jpeg"
+    #     # msg.data = np.array(cv.imencode('.jpeg', img)[1]).tostring()
+        
+    #     # Publish new image
+    #     self.image_pub.publish(msg)
 
-    def callback(self, msg):
+
+    def camera_trigger_callback(self, msg):
         """ read in trigger message string and interpret how many images to capture"""
 
         rospy.loginfo('Trigger message received:')
@@ -151,6 +182,7 @@ class CameraTrigger:
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
 
+
     def save_predictions(self, boxes: Boxes, file: str):
         """ save predictions (boxes) to text file"""  
         lines = []
@@ -165,11 +197,10 @@ class CameraTrigger:
             # TODO format for YOLO .txt file
             array_str = cls+' '+x1n+' '+y1n+' '+x2n+' '+y2n+' '+conf+'\n'
             lines.append(array_str)
-        
         with open(file, 'w') as f:
             f.writelines(lines) 
-
         return True
+
 
     def remote_focus_callback(self, msg):
         """ read in remote_focus message string and interpret setting the remote focus of the arducam camera"""
@@ -229,6 +260,23 @@ if __name__ == '__main__':
         CamPub = CameraTrigger()
         rospy.loginfo('Awaiting image trigger')
 
+        # get image from picam
+        img, img_name, metadata = CamPub.capture_image(SIM=False)
+        
+        # try to publish image constantly?
+        # publish 
+        bridge = CvBridge()
+        ros_image = bridge.cv2_to_imgmsg(img, encoding="rgb8")
+        
+        #### Create Image ####
+        # msg = Image()
+        # msg.header.stamp = rospy.Time.now()
+        # msg.format = "jpeg"
+        # msg.data = np.array(cv.imencode('.jpeg', img)[1]).tobytes()
+        
+        # Publish new image
+        CamPub.image_pub.publish(ros_image)
+        
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
