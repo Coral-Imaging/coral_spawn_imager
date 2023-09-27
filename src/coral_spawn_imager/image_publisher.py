@@ -2,6 +2,7 @@
 
 """ 
 create image publisher from picam2/ROS
+publishes single images obtained from Picamerea2Wrapper
 """
 
 import rospy
@@ -35,6 +36,7 @@ while not rospy.is_shutdown():
     rospy.loginfo('publish image')
     image_pub.publish(ros_image)
     
+    rospy.loginfo(f'number of subscribers to topic: {image_pub.get_num_connections()}')
     rate.sleep()
     
 print('done')
