@@ -159,13 +159,26 @@ class PiCamera2Wrapper:
         """
         if self.focuser is not None:
             print(f'remote_focus: {remote_focus}')
-            if remote_focus >= 0 and remote_focus <= 1000:
-                self.focuser.set(self.focuser.OPT_FOCUS, remote_focus)
-                time.sleep(2)
+            if remote_focus < 0:
+                print(f'remote_focus received: {remote_focus} < 0. Setting min focus to 0')
+                self.focuser.set(self.focuser.OPT_FOCUS, 0)
+                time.sleep(1)
                 return True
+            
+            if remote_focus > 1000:
+                print(f'remote_focus received: {remote_focus} > 1000. Setting max focus to 1000')
+                self.focuser.set(self.focuser.OPT_FOCUS, 1000)
+                time.sleep(1)
+                return True    
+            
+            elif remote_focus >= 0 and remote_focus <= 1000:
+                self.focuser.set(self.focuser.OPT_FOCUS, remote_focus)
+                time.sleep(1)
+                return True
+            
             else:
                 # TODO probably should be Input/ValueError
-                print(f'remote_focus invalid: {remote_focus}. Should be (0, 1000)')
+                print(f'remote_focus invalid: {remote_focus}. Should be # (0, 1000)')
                 return False
         else:
             return False
