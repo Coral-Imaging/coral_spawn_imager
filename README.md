@@ -123,3 +123,16 @@ publish to /remote_focus subscriber
 rostopic echo /remote_focus
 
 rostopic pub /remote_focus std_msgs/Int16 "data: 100"
+
+## Using ML model for online counting
+
+Install ultralytics repo on pi: https://github.com/Coral-Imaging/ultralytics_cslics
+
+`cd` to the repo and install via `pip3 install -e .`
+
+Double check that ultralytics is using the correct version of opencv (not the headless version) by typing `pip3 list` and looking for the opencv, make sure there is no `headless` version.
+
+If so, remove via `pip3 uninstall opencv-4.6.0-headless` (or something like that, TBD)
+
+Should run (will update these instructions later)
+
