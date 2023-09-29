@@ -10,7 +10,7 @@ import time
 print('creating PiCamera2Wrapper object')
 
 # remote preview setup
-CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview.json'
+CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_lights.json'
 # SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
 SAVE_IMAGE_DIR_SSD = '/home/cslics04/images'
 CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
@@ -28,7 +28,7 @@ print('g: get focus value')
 print('y: capture an image')
 print('x: stop preview, end camera operation')
 
-focus_increment = 100
+focus_increment = 50
 while not value == 'x':
     value=input('Type input r, t, g, y, or x:\n')
     # print(f'value entered {value}')
