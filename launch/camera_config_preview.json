@@ -22,5 +22,7 @@
     "FrameDurationLimits_Max": 4000,
     "NoiseReductionMode": "Fast",
     "Saturation": 1.0,
-    "Sharpness": 4.0
+    "Sharpness": 4.0,
+    "remote_focus": 5,
+    "camera_type": "Arducam_RemoteFocusCamera"
 }
