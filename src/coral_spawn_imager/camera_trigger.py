@@ -35,6 +35,9 @@ import random
 from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
 from ultralytics import YOLO
 from ultralytics.engine.results import Results, Boxes
+from coral_spawn_counter import RedCircle_Detector
+from coral_spawn_counter import Surface_Detector
+from coral_spawn_counter import SubSurface_Detector
 
 """
 CameraTrigger: 
@@ -65,13 +68,15 @@ class CameraTrigger:
     SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
 
     # when simulating image capture, default directory for simulated surface images
-    IMG_SRC_DIR = '/home/cslics04/cslics_ws/src/coral_spawn_imager/sample_images/surface'
+    IMG_SRC_DIR = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
+    detection_mode_options = {'surface', 'subsurface', 'redcircle'}
+    DEFAULT_DETECTION_MODE = detection_mode_options[2]
 
-    def __init__(self, img_dir=None):
+
+    def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE):
 
         self.path = os.path.dirname(__file__) # get path to this file
         print('Working directory: {}'.format(self.path))
-
 
         print('Initializing picam_trigger node')
         rospy.init_node(self.CAMERA_TRIGGER_NODE_NAME, anonymous=True)
@@ -97,7 +102,12 @@ class CameraTrigger:
         
         # for onboard detection:
         # TODO load detection models
-        self.model = YOLO(self.SURFACE_DETECTION_MODEL_FILE)
+
+        
+        self.detection_mode = detection_mode
+        if self.detection_mode == self.detection_mode_options[2]: # red circle
+            root_dir = '/home/cslics04/cslics'
+            self.detector = RedCircle_Detector(root_dir)
         
         if img_dir is None:
             if self.check_ssd():
