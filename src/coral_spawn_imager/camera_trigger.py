@@ -33,8 +33,8 @@ import code
 import random
 
 from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
-from ultralytics import YOLO
-from ultralytics.engine.results import Results, Boxes
+# from ultralytics import YOLO
+# from ultralytics.engine.results import Results, Boxes
 from coral_spawn_counter import RedCircle_Detector
 from coral_spawn_counter import Surface_Detector
 from coral_spawn_counter import SubSurface_Detector
@@ -73,8 +73,9 @@ class CameraTrigger:
     DEFAULT_DETECTION_MODE = detection_mode_options[2]
 
 
-    def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE):
+    def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=True):
 
+        self.sim = sim
         self.path = os.path.dirname(__file__) # get path to this file
         print('Working directory: {}'.format(self.path))
 
@@ -100,30 +101,31 @@ class CameraTrigger:
         # subscriber to start publishing image
         # self.image_sub = rospy.Subscriber(self.IMAGE_SUBSCRIBER_NAME, Image, self.image_preview_callback, queue_size=1)
         
-        # for onboard detection:
-        # TODO load detection models
-
-        
+        # for onboard detection:   
+        # currently, if statement has only one mode of detection active.
+        # TODO will eventually want both surface and subsurface models running concurrently?     
         self.detection_mode = detection_mode
         if self.detection_mode == self.detection_mode_options[0]: # surface
-            root_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
-            img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/surface'
+            meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
+            sim_img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/surface'
             self.imgsave_dir = '/home/cslics04/images/surface/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/surface/detections/detection_textfiles'
-            self.detector = Surface_Detector(root_dir, img_dir=img_dir)
+            self.detector = Surface_Detector(meta_dir, img_dir=sim_img_dir)
         elif self.detection_mode == self.detection_mode_options[1]: # subsurface
-            root_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
-            img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
+            meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
+            sim_img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
             self.imgsave_dir = '/home/cslics04/images/subsurface/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/subsurface/detections/detection_textfiles'
-            self.detector = SubSurface_Detector(root_dir, img_dir=img_dir)
+            self.detector = SubSurface_Detector(meta_dir, img_dir=sim_img_dir)
         else: # red circle
-            root_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
-            img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
+            meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
+            sim_img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
             self.imgsave_dir = '/home/cslics04/images/redcircles/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/redcircles/detections/detection_textfiles'
-            self.detector = RedCircle_Detector(root_dir, img_dir=img_dir)
-        # TODO if other detection modes
+            self.detector = RedCircle_Detector(meta_dir, img_dir=sim_img_dir)
+        
+        # for simulation purposes
+        self.img_sim_dir = sim_img_dir
         
         if img_dir is None:
             if self.check_ssd():
@@ -178,7 +180,7 @@ class CameraTrigger:
         for i in range(self.SAMPLE_SIZE):
             # print(f'callback metadata: {metadata}')
             
-            img, img_name, metadata = self.capture_image(SIM=True)
+            img, img_name, metadata = self.capture_image(SIM=self.sim)
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.tmp_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
             
@@ -194,10 +196,12 @@ class CameraTrigger:
             # txt_name = img_name.rsplit('.')[0] + '.txt'
             # self.save_predictions(boxes, os.path.join(self.img_dir, txt_name))
             
-            # TODO apply sub-surface detection model
+            # TODO apply surface and sub-surface detection model later
+            if self.detection_mode == 'surface':
+                img = self.detector.prep_img(img)
+            elif self.detection_mode == 'subsurface':
+                img = self.detector.prep_img_name(img_name)
             
-
-            # self.detector.prep_img()
             predictions = self.detector.detect(img)
             
             # save predictions
@@ -217,23 +221,23 @@ class CameraTrigger:
         rospy.loginfo('Finished image capture. Awaiting image trigger')
 
 
-    def save_predictions(self, boxes: Boxes, file: str):
-        """ save predictions (boxes) to text file"""  
-        lines = []
-        for b in boxes:
-            cls = str(int(b.cls))
-            conf = str(float(b.conf))
-            xyxyn = b.xyxyn.numpy()[0]
-            x1n = str(xyxyn[0])
-            y1n = str(xyxyn[1])
-            x2n = str(xyxyn[2])
-            y2n = str(xyxyn[3])
-            # TODO format for YOLO .txt file
-            array_str = cls+' '+x1n+' '+y1n+' '+x2n+' '+y2n+' '+conf+'\n'
-            lines.append(array_str)
-        with open(file, 'w') as f:
-            f.writelines(lines) 
-        return True
+    # def save_predictions(self, boxes: Boxes, file: str):
+    #     """ save predictions (boxes) to text file"""  
+    #     lines = []
+    #     for b in boxes:
+    #         cls = str(int(b.cls))
+    #         conf = str(float(b.conf))
+    #         xyxyn = b.xyxyn.numpy()[0]
+    #         x1n = str(xyxyn[0])
+    #         y1n = str(xyxyn[1])
+    #         x2n = str(xyxyn[2])
+    #         y2n = str(xyxyn[3])
+    #         # TODO format for YOLO .txt file
+    #         array_str = cls+' '+x1n+' '+y1n+' '+x2n+' '+y2n+' '+conf+'\n'
+    #         lines.append(array_str)
+    #     with open(file, 'w') as f:
+    #         f.writelines(lines) 
+    #     return True
 
 
     def remote_focus_callback(self, msg):
@@ -252,13 +256,15 @@ class CameraTrigger:
         if SIM is true: grab image/metadata from folder
         else: captures an image/metadata from pi camera """
         if SIM:
-            img_list = sorted(glob.glob(os.path.join(self.IMG_SRC_DIR, '*.jpg')))
+            img_list = sorted(glob.glob(os.path.join(self.img_dir, '*.jpg')) +
+                              glob.glob(os.path.join(self.img_dir, '*.png')) + 
+                              glob.glob(os.path.join(self.img_dir, '*.jpeg')))
             print(f'length of img_list: {len(img_list)}')
             i = random.randint(0, len(img_list))
             img_np = cv.imread(img_list[i])
             img_name = os.path.basename(img_list[i])
             image_pil = pilimage.open(img_list[i])
-            metadata_exif = image_pil.getexif()
+            # metadata_exif = image_pil.getexif()
             metadata = {
                 "Filename": image_pil.filename,
                 "Image Size": image_pil.size,
