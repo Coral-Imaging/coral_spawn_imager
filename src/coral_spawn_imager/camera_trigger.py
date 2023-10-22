@@ -105,9 +105,25 @@ class CameraTrigger:
 
         
         self.detection_mode = detection_mode
-        if self.detection_mode == self.detection_mode_options[2]: # red circle
-            root_dir = '/home/cslics04/cslics'
-            self.detector = RedCircle_Detector(root_dir)
+        if self.detection_mode == self.detection_mode_options[0]: # surface
+            root_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
+            img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/surface'
+            self.imgsave_dir = '/home/cslics04/images/surface/detections/detection_images'
+            self.txtsave_dir = '/home/cslics04/images/surface/detections/detection_textfiles'
+            self.detector = Surface_Detector(root_dir, img_dir=img_dir)
+        elif self.detection_mode == self.detection_mode_options[1]: # subsurface
+            root_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
+            img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
+            self.imgsave_dir = '/home/cslics04/images/subsurface/detections/detection_images'
+            self.txtsave_dir = '/home/cslics04/images/subsurface/detections/detection_textfiles'
+            self.detector = SubSurface_Detector(root_dir, img_dir=img_dir)
+        else: # red circle
+            root_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
+            img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
+            self.imgsave_dir = '/home/cslics04/images/redcircles/detections/detection_images'
+            self.txtsave_dir = '/home/cslics04/images/redcircles/detections/detection_textfiles'
+            self.detector = RedCircle_Detector(root_dir, img_dir=img_dir)
+        # TODO if other detection modes
         
         if img_dir is None:
             if self.check_ssd():
@@ -167,21 +183,29 @@ class CameraTrigger:
             self.picam.update_metadata(metadata, self.coral_metadata)
             
             # apply surface detection model
-            pred = self.model.predict(source=img,
-                                      save=True,
-                                      save_txt=True, # later set to false, or figure out if can pt to text
-                                      save_conf=True,
-                                      imgsz=640,
-                                      conf=0.5)
+            # pred = self.model.predict(source=img,
+            #                           save=True,
+            #                           save_txt=True, # later set to false, or figure out if can pt to text
+            #                           save_conf=True,
+            #                           imgsz=640,
+            #                           conf=0.5)
             # save results to text
-            boxes: Boxes = pred[0].boxes   
-            txt_name = img_name.rsplit('.')[0] + '.txt'
-            self.save_predictions(boxes, os.path.join(self.img_dir, txt_name))
+            # boxes: Boxes = pred[0].boxes   
+            # txt_name = img_name.rsplit('.')[0] + '.txt'
+            # self.save_predictions(boxes, os.path.join(self.img_dir, txt_name))
             
             # TODO apply sub-surface detection model
             
-            # TODO draw/save image detections?
+
+            # self.detector.prep_img()
+            predictions = self.detector.detect(img)
             
+            # save predictions
+            self.detector.save_image_predictions(predictions, img_name, self.imgsave_dir) # TODO setup, so that I can call it like this
+            self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir)
+            
+            
+            # save RAW image
             # print(f'updated metadata: {metadata}')
             self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
             
