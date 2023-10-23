@@ -52,7 +52,7 @@ class CameraTrigger:
     IMAGE_PUBLISHER_NAME = 'image'
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
-    SAMPLE_SIZE = 3 # number of images captured in sequence after trigger is received
+    SAMPLE_SIZE = 2 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = (1.0/4.0) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
@@ -70,7 +70,7 @@ class CameraTrigger:
     # when simulating image capture, default directory for simulated surface images
     # IMG_SRC_DIR = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
     detection_mode_options = ['surface', 'subsurface', 'redcircle']
-    DEFAULT_DETECTION_MODE = detection_mode_options[1] # NOTE set detection mode
+    DEFAULT_DETECTION_MODE = detection_mode_options[2] # NOTE set detection mode
 
 
     def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=True):
@@ -111,12 +111,14 @@ class CameraTrigger:
             self.imgsave_dir = '/home/cslics04/images/surface/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/surface/detections/detection_textfiles'
             self.detector = Surface_Detector(meta_dir, img_dir=img_sim_dir)
+            
         elif self.detection_mode == self.detection_mode_options[1]: # subsurface
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
             self.imgsave_dir = '/home/cslics04/images/subsurface/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/subsurface/detections/detection_textfiles'
             self.detector = SubSurface_Detector(meta_dir, img_dir=img_sim_dir)
+            
         else: # red circle
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
@@ -186,11 +188,15 @@ class CameraTrigger:
             img, img_name, metadata = self.capture_image(SIM=self.sim)
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.tmp_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
-                        
+            
+            # save RAW image
+            # print(f'updated metadata: {metadata}')
+            self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
+            # save to tmp and then move to prevent downloading incomplete images from img_dir when saving image is in progress
+            shutil.move(os.path.join(self.tmp_dir, img_name), os.path.join(self.img_dir, img_name))
+
             # TODO apply surface and sub-surface detection model later
-            if self.detection_mode == 'surface':
-                img_prep = self.detector.prep_img(img)
-            elif self.detection_mode == 'subsurface':
+            if self.detection_mode == 'subsurface':
                 img_prep = self.detector.prep_img(img)
             else:
                 img_prep = img
@@ -200,13 +206,8 @@ class CameraTrigger:
             self.detector.save_image_predictions(predictions, img, img_name, self.imgsave_dir, self.detector.class_colours, self.detector.classes) # TODO setup, so that I can call it like this
             self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir, self.detector.classes)
             
-            # save RAW image
-            # print(f'updated metadata: {metadata}')
-            self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
+           
             
-            # save to tmp and then move to prevent downloading incomplete images from img_dir when saving image is in progress
-            shutil.move(os.path.join(self.tmp_dir, img_name), os.path.join(self.img_dir, img_name))
-
             self.rate.sleep()
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
@@ -253,6 +254,7 @@ class CameraTrigger:
             print(f'length of img_list: {len(img_list)}')
             # i = random.randint(0, len(img_list)-1) # TODO probably better to cycle through these images
             img_np = cv.imread(img_list[self.sim_count])
+            img_np = cv.cvtColor(img_np, cv.COLOR_BGR2RGB)
             img_name = os.path.basename(img_list[self.sim_count])
             image_pil = pilimage.open(img_list[self.sim_count])
             # metadata_exif = image_pil.getexif()

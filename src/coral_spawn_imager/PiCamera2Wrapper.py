@@ -469,6 +469,7 @@ class PiCamera2Wrapper:
 
             # else:
             # raise TypeError(img_name, "img_name does not have png in it; thus, img is not a png, only png saving with metadata is currently supported")
+            # img = cv.cvtColor(img, cv.COLOR_BGR2RGB) # if img is in BGR format
             img = pil_image.fromarray(img)
             img.save(img_name)
             print('in-image metadata saving only supported for png format. Saving metadata as separate json file with the same img_name.json')
