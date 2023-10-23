@@ -189,11 +189,12 @@ class CameraTrigger:
                         
             # TODO apply surface and sub-surface detection model later
             if self.detection_mode == 'surface':
-                img = self.detector.prep_img(img)
+                img_prep = self.detector.prep_img(img)
             elif self.detection_mode == 'subsurface':
-                img = self.detector.prep_img(img)
-            
-            predictions = self.detector.detect(img)
+                img_prep = self.detector.prep_img(img)
+            else:
+                img_prep = img
+            predictions = self.detector.detect(img_prep)
             
             # save predictions
             self.detector.save_image_predictions(predictions, img, img_name, self.imgsave_dir, self.detector.class_colours, self.detector.classes) # TODO setup, so that I can call it like this
