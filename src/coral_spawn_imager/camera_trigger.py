@@ -35,9 +35,9 @@ import random
 from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
 # from ultralytics import YOLO
 # from ultralytics.engine.results import Results, Boxes
-from coral_spawn_counter import RedCircle_Detector
-from coral_spawn_counter import Surface_Detector
-from coral_spawn_counter import SubSurface_Detector
+from coral_spawn_counter.RedCircle_Detector import RedCircle_Detector
+from coral_spawn_counter.Surface_Detector import Surface_Detector
+from coral_spawn_counter.SubSurface_Detector import SubSurface_Detector
 
 """
 CameraTrigger: 
@@ -52,7 +52,7 @@ class CameraTrigger:
     IMAGE_PUBLISHER_NAME = 'image'
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
-    SAMPLE_SIZE = 2 # number of images captured in sequence after trigger is received
+    SAMPLE_SIZE = 3 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = (1.0/4.0) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
@@ -69,8 +69,8 @@ class CameraTrigger:
 
     # when simulating image capture, default directory for simulated surface images
     IMG_SRC_DIR = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
-    detection_mode_options = {'surface', 'subsurface', 'redcircle'}
-    DEFAULT_DETECTION_MODE = detection_mode_options[2]
+    detection_mode_options = ['surface', 'subsurface', 'redcircle']
+    DEFAULT_DETECTION_MODE = detection_mode_options[2] # NOTE set detection mode
 
 
     def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=True):
@@ -107,25 +107,28 @@ class CameraTrigger:
         self.detection_mode = detection_mode
         if self.detection_mode == self.detection_mode_options[0]: # surface
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
-            sim_img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/surface'
+            img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/surface'
             self.imgsave_dir = '/home/cslics04/images/surface/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/surface/detections/detection_textfiles'
-            self.detector = Surface_Detector(meta_dir, img_dir=sim_img_dir)
+            self.detector = Surface_Detector(meta_dir, img_dir=img_sim_dir)
         elif self.detection_mode == self.detection_mode_options[1]: # subsurface
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
-            sim_img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
+            img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
             self.imgsave_dir = '/home/cslics04/images/subsurface/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/subsurface/detections/detection_textfiles'
-            self.detector = SubSurface_Detector(meta_dir, img_dir=sim_img_dir)
+            self.detector = SubSurface_Detector(meta_dir, img_dir=img_sim_dir)
         else: # red circle
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
-            sim_img_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
+            img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
             self.imgsave_dir = '/home/cslics04/images/redcircles/detections/detection_images'
             self.txtsave_dir = '/home/cslics04/images/redcircles/detections/detection_textfiles'
-            self.detector = RedCircle_Detector(meta_dir, img_dir=sim_img_dir)
+            self.detector = RedCircle_Detector(meta_dir=meta_dir, img_dir=img_sim_dir)
         
         # for simulation purposes
-        self.img_sim_dir = sim_img_dir
+        os.makedirs(self.imgsave_dir, exist_ok=True)
+        os.makedirs(self.txtsave_dir, exist_ok=True)
+        self.img_sim_dir = img_sim_dir
+        self.sim_count = 0 # counter to iterate/index img_sim_dir images
         
         if img_dir is None:
             if self.check_ssd():
@@ -183,19 +186,7 @@ class CameraTrigger:
             img, img_name, metadata = self.capture_image(SIM=self.sim)
             rospy.loginfo(f'Capture image: {i}: {os.path.join(self.tmp_dir, img_name)}')
             self.picam.update_metadata(metadata, self.coral_metadata)
-            
-            # apply surface detection model
-            # pred = self.model.predict(source=img,
-            #                           save=True,
-            #                           save_txt=True, # later set to false, or figure out if can pt to text
-            #                           save_conf=True,
-            #                           imgsz=640,
-            #                           conf=0.5)
-            # save results to text
-            # boxes: Boxes = pred[0].boxes   
-            # txt_name = img_name.rsplit('.')[0] + '.txt'
-            # self.save_predictions(boxes, os.path.join(self.img_dir, txt_name))
-            
+                        
             # TODO apply surface and sub-surface detection model later
             if self.detection_mode == 'surface':
                 img = self.detector.prep_img(img)
@@ -205,9 +196,8 @@ class CameraTrigger:
             predictions = self.detector.detect(img)
             
             # save predictions
-            self.detector.save_image_predictions(predictions, img_name, self.imgsave_dir) # TODO setup, so that I can call it like this
-            self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir)
-            
+            self.detector.save_image_predictions(predictions, img, img_name, self.imgsave_dir, self.detector.class_colours, self.detector.classes) # TODO setup, so that I can call it like this
+            self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir, self.detector.classes)
             
             # save RAW image
             # print(f'updated metadata: {metadata}')
@@ -256,14 +246,14 @@ class CameraTrigger:
         if SIM is true: grab image/metadata from folder
         else: captures an image/metadata from pi camera """
         if SIM:
-            img_list = sorted(glob.glob(os.path.join(self.img_dir, '*.jpg')) +
-                              glob.glob(os.path.join(self.img_dir, '*.png')) + 
-                              glob.glob(os.path.join(self.img_dir, '*.jpeg')))
+            img_list = sorted(glob.glob(os.path.join(self.img_sim_dir, '*.jpg')) +
+                              glob.glob(os.path.join(self.img_sim_dir, '*.png')) + 
+                              glob.glob(os.path.join(self.img_sim_dir, '*.jpeg')))
             print(f'length of img_list: {len(img_list)}')
-            i = random.randint(0, len(img_list))
-            img_np = cv.imread(img_list[i])
-            img_name = os.path.basename(img_list[i])
-            image_pil = pilimage.open(img_list[i])
+            # i = random.randint(0, len(img_list)-1) # TODO probably better to cycle through these images
+            img_np = cv.imread(img_list[self.sim_count])
+            img_name = os.path.basename(img_list[self.sim_count])
+            image_pil = pilimage.open(img_list[self.sim_count])
             # metadata_exif = image_pil.getexif()
             metadata = {
                 "Filename": image_pil.filename,
@@ -273,6 +263,7 @@ class CameraTrigger:
                 "Image Format": image_pil.format,
                 "Image Mode": image_pil.mode # TODO other metadata_exif info (opt)
             }
+            self.sim_count+=1 # increment to next image in img_sim_dir
         else:
             img_np, img_name, metadata = self.picam.capture_image()
         return img_np, img_name, metadata
@@ -299,7 +290,11 @@ if __name__ == '__main__':
         print('Running camera_trigger.py')    
         CamPub = CameraTrigger()
         rospy.loginfo('Awaiting image trigger')
-
+        # get info on topic
+        # rostopic info /trigger
+        # to trigger via command-line:
+        # rostopic pub /trigger std_msgs/String "data: tada"
+        
         # get image from picam
         img, img_name, metadata = CamPub.capture_image(SIM=False)
         
