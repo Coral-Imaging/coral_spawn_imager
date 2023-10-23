@@ -446,7 +446,7 @@ class PiCamera2Wrapper:
         return pi_metadata.update(coral_metadata)
 
 
-    def save_image(self, img, img_name, metadata=None):
+    def save_image(self, img, img_name, metadata=None, json_name=None):
         # TODO metadata is currently only supported for .png image types
         # TODO needs to be refactored
 
@@ -473,7 +473,7 @@ class PiCamera2Wrapper:
             img = pil_image.fromarray(img)
             img.save(img_name)
             print('in-image metadata saving only supported for png format. Saving metadata as separate json file with the same img_name.json')
-            json_name = img_name.split('.')[0] + '.json'
+            # json_name = img_name.split('.')[0] + '.json'
             with open(json_name, "w") as f:
                 json.dump(metadata, f)
 

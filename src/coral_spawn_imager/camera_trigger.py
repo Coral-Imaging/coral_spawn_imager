@@ -190,11 +190,12 @@ class CameraTrigger:
             self.picam.update_metadata(metadata, self.coral_metadata)
             
             # save RAW image
-            # print(f'updated metadata: {metadata}')
-            self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata)
+            metadata_name = img_name.split('.')[0] + '.json'
+            self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata, metadata_name)
             # save to tmp and then move to prevent downloading incomplete images from img_dir when saving image is in progress
             shutil.move(os.path.join(self.tmp_dir, img_name), os.path.join(self.img_dir, img_name))
-
+            shutil.move(os.path.join(self.tmp_dir, metadata_name), os.path.join(self.img_dir, metadata_name))
+            
             # TODO apply surface and sub-surface detection model later
             if self.detection_mode == 'subsurface':
                 img_prep = self.detector.prep_img(img)
@@ -205,31 +206,10 @@ class CameraTrigger:
             # save predictions
             self.detector.save_image_predictions(predictions, img, img_name, self.imgsave_dir, self.detector.class_colours, self.detector.classes) # TODO setup, so that I can call it like this
             self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir, self.detector.classes)
-            
-           
-            
+
             self.rate.sleep()
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
-
-
-    # def save_predictions(self, boxes: Boxes, file: str):
-    #     """ save predictions (boxes) to text file"""  
-    #     lines = []
-    #     for b in boxes:
-    #         cls = str(int(b.cls))
-    #         conf = str(float(b.conf))
-    #         xyxyn = b.xyxyn.numpy()[0]
-    #         x1n = str(xyxyn[0])
-    #         y1n = str(xyxyn[1])
-    #         x2n = str(xyxyn[2])
-    #         y2n = str(xyxyn[3])
-    #         # TODO format for YOLO .txt file
-    #         array_str = cls+' '+x1n+' '+y1n+' '+x2n+' '+y2n+' '+conf+'\n'
-    #         lines.append(array_str)
-    #     with open(file, 'w') as f:
-    #         f.writelines(lines) 
-    #     return True
 
 
     def remote_focus_callback(self, msg):
