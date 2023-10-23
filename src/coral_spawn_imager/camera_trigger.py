@@ -68,9 +68,9 @@ class CameraTrigger:
     SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
 
     # when simulating image capture, default directory for simulated surface images
-    IMG_SRC_DIR = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
+    # IMG_SRC_DIR = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
     detection_mode_options = ['surface', 'subsurface', 'redcircle']
-    DEFAULT_DETECTION_MODE = detection_mode_options[2] # NOTE set detection mode
+    DEFAULT_DETECTION_MODE = detection_mode_options[1] # NOTE set detection mode
 
 
     def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=True):
@@ -191,7 +191,7 @@ class CameraTrigger:
             if self.detection_mode == 'surface':
                 img = self.detector.prep_img(img)
             elif self.detection_mode == 'subsurface':
-                img = self.detector.prep_img_name(img_name)
+                img = self.detector.prep_img(img)
             
             predictions = self.detector.detect(img)
             
