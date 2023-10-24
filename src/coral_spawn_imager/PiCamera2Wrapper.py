@@ -413,13 +413,13 @@ class PiCamera2Wrapper:
                                                  os.path.join(save_dir, img_name))
 
 
-    def capture_image(self, img_name=None, save_dir=None, format='jpeg'):
+    def capture_image(self, img_name=None, save_dir=None, format='jpg'):
         """
         capture and return a single image using numpy arrays
         """
         if img_name is None:
             datestr = datetime.datetime.now()
-            img_name = 'cslics' + str(self.camera_index).zfill(2) + datestr.strftime("%Y%m%d_%H%M%S_%f") + '_img.' + format
+            img_name = 'cslics' + str(self.camera_index).zfill(2) + '_' + datestr.strftime("%Y%m%d_%H%M%S_%f") + '_img.' + format
 
         if save_dir is not None:
             img_name = os.path.join(save_dir, img_name)

@@ -11,7 +11,7 @@ import os
 
 
 SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
-CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview.json'
+CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_lights.json'
 CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
 print('creating picamera2 object & preview')
@@ -30,7 +30,9 @@ while not value == 'x':
     if value == 'y':
         img_np, img_name, metadata = cam.capture_image(save_dir=SAVE_IMAGE_DIR_SSD)
         cam.update_metadata(metadata, coral_metadata)
-        cam.save_image(img_np, os.path.join(SAVE_IMAGE_DIR_SSD, img_name), metadata)
+
+        metadata_name = os.path.join(SAVE_IMAGE_DIR_SSD, img_name.split('.')[0] + '.json')
+        cam.save_image(img_np, os.path.join(SAVE_IMAGE_DIR_SSD, img_name), metadata, metadata_name)
         # cam.capture_image('main')
         # img_name = 'test.png'
         print(f'captured image {img_name} in {SAVE_IMAGE_DIR_SSD}')

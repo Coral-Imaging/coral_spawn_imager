@@ -52,7 +52,7 @@ class CameraTrigger:
     IMAGE_PUBLISHER_NAME = 'image'
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
-    SAMPLE_SIZE = 2 # number of images captured in sequence after trigger is received
+    SAMPLE_SIZE = 30 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = (1.0/4.0) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
@@ -62,7 +62,7 @@ class CameraTrigger:
     SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
     SAVE_IMAGE_DIR_CARD_TMP = '/tmp'
 
-    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_dev.json'
+    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_lights.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
     SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
@@ -72,8 +72,9 @@ class CameraTrigger:
     detection_mode_options = ['surface', 'subsurface', 'redcircle']
     DEFAULT_DETECTION_MODE = detection_mode_options[2] # NOTE set detection mode
 
+    SIMULATION_MODE=False
 
-    def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=True):
+    def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=SIMULATION_MODE):
 
         self.sim = sim
         self.path = os.path.dirname(__file__) # get path to this file
@@ -191,7 +192,7 @@ class CameraTrigger:
             
             # save RAW image
             metadata_name = img_name.split('.')[0] + '.json'
-            self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata, metadata_name)
+            self.picam.save_image(img, os.path.join(self.tmp_dir, img_name), metadata, os.path.join(self.tmp_dir, metadata_name))
             # save to tmp and then move to prevent downloading incomplete images from img_dir when saving image is in progress
             shutil.move(os.path.join(self.tmp_dir, img_name), os.path.join(self.img_dir, img_name))
             shutil.move(os.path.join(self.tmp_dir, metadata_name), os.path.join(self.img_dir, metadata_name))

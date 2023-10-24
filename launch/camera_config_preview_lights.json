@@ -9,14 +9,14 @@
     "AeEnable": 0,
     "AeExposureMode": "Short",
     "AeMeteringMode": "Matrix",
-    "AnalogueGain": 10.0,
+    "AnalogueGain": 1.0,
     "AwbEnable": 0,
     "AwbMode": "Custom",
     "Brightness": 2.0,
     "ColourGains_Red": 3.7,
     "ColourGains_Blue": 1.5,
     "Contrast": 1.0,
-    "ExposureTime": 1000,
+    "ExposureTime": 8000,
     "ExposureValue": 0.0,
     "FrameDurationLimits_Min": 1000,
     "FrameDurationLimits_Max": 4000,
@@ -24,5 +24,5 @@
     "Saturation": 1.0,
     "Sharpness": 4.0,
     "remote_focus": 500,
-    "camera_type": "Arducam_RemoteFocusCamera"
+    "camera_type": "RaspberryPi_HighQualityCamera"
 }
