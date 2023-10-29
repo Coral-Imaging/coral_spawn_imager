@@ -52,29 +52,29 @@ class CameraTrigger:
     IMAGE_PUBLISHER_NAME = 'image'
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
-    SAMPLE_SIZE = 30 # number of images captured in sequence after trigger is received
+    SAMPLE_SIZE = 3 # number of images captured in sequence after trigger is received
     SAMPLE_RATE = (1.0/4.0) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
-    SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
-    SAVE_IMAGE_DIR_SSD_TMP = '/media/cslics04/cslics_ssd/temp'
+    SAVE_SSD_BAK = '/home/cslics04/ssd_bak'
+    SAVE_IMAGE_DIR_SSD = 'images'
+    SAVE_IMAGE_DIR_SSD_TMP = 'temp'
 
-    SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
-    SAVE_IMAGE_DIR_CARD_TMP = '/tmp'
+    # SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
+    # SAVE_IMAGE_DIR_CARD_TMP = '/tmp'
 
-    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_lights.json'
+    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_dev.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
     SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
 
     # when simulating image capture, default directory for simulated surface images
-    # IMG_SRC_DIR = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
     detection_mode_options = ['surface', 'subsurface', 'redcircle']
     DEFAULT_DETECTION_MODE = detection_mode_options[2] # NOTE set detection mode
 
     SIMULATION_MODE=False
 
-    def __init__(self, img_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=SIMULATION_MODE):
+    def __init__(self, save_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=SIMULATION_MODE):
 
         self.sim = sim
         self.path = os.path.dirname(__file__) # get path to this file
@@ -133,16 +133,18 @@ class CameraTrigger:
         self.img_sim_dir = img_sim_dir
         self.sim_count = 0 # counter to iterate/index img_sim_dir images
         
-        if img_dir is None:
+        # detect if ssd is connected. If not, then use backup image/temp folders
+        if save_dir is None:
             if self.check_ssd():
                 # ssd is connected, we save images there:
-                img_dir = os.path.join(self.SAVE_IMAGE_DIR_SSD)
-                tmp_dir = os.path.join(self.SAVE_IMAGE_DIR_SSD_TMP)
+                save_dir = os.path.join(self.SAVE_SSD)
             else:
-                img_dir = os.path.join(self.SAVE_IMAGE_DIR_CARD)
-                tmp_dir = os.path.join(self.SAVE_IMAGE_DIR_CARD_TMP)
+                save_dir = os.path.join(self.SAVE_SSD_BAK)
         else:
-            img_dir = img_dir
+            save_dir = save_dir
+
+        img_dir = os.path.join(save_dir, 'images')
+        tmp_dir = os.path.join(save_dir, 'temp')
         os.makedirs(img_dir, exist_ok=True)
         os.makedirs(tmp_dir, exist_ok=True)
         self.img_dir = img_dir

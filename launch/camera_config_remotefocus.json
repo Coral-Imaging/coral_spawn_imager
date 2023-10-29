@@ -23,6 +23,6 @@
     "NoiseReductionMode": "Fast",
     "Saturation": 1.0,
     "Sharpness": 4.0,
-    "remote_focus": 5,
-    "camera_type": "RaspberryPi_HighQualityCamera"
+    "remote_focus": 400,
+    "camera_type": "Arducam_RemoteFocusCamera"
 }
