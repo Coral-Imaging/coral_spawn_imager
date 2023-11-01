@@ -11,7 +11,7 @@ import os
 
 
 SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
-CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_lights.json'
+CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_2023.json'
 CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
 print('creating picamera2 object & preview')

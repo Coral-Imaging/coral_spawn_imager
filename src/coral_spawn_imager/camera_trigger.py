@@ -52,8 +52,8 @@ class CameraTrigger:
     IMAGE_PUBLISHER_NAME = 'image'
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
-    SAMPLE_SIZE = 3 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = (1.0/4.0) # Hz
+    SAMPLE_SIZE =30 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = 2 # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_SSD_BAK = '/home/cslics04/ssd_bak'
@@ -63,7 +63,7 @@ class CameraTrigger:
     # SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
     # SAVE_IMAGE_DIR_CARD_TMP = '/tmp'
 
-    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_dev.json'
+    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_seasim_2023.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
     SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
