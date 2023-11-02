@@ -70,7 +70,7 @@ class CameraTrigger:
 
     # when simulating image capture, default directory for simulated surface images
     detection_mode_options = ['surface', 'subsurface', 'redcircle']
-    DEFAULT_DETECTION_MODE = detection_mode_options[2] # NOTE set detection mode
+    DEFAULT_DETECTION_MODE = detection_mode_options[0] # NOTE set detection mode
 
     SIMULATION_MODE=False
 
@@ -109,27 +109,25 @@ class CameraTrigger:
         if self.detection_mode == self.detection_mode_options[0]: # surface
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/surface'
-            self.imgsave_dir = '/home/cslics04/images/surface/detections/detection_images'
-            self.txtsave_dir = '/home/cslics04/images/surface/detections/detection_textfiles'
+            # self.imgsave_dir = '/home/cslics04/images/surface/detections/detection_images'
+            #self.txtsave_dir = '/home/cslics04/images/surface/detections/detection_textfiles'
             self.detector = Surface_Detector(meta_dir, img_dir=img_sim_dir)
             
         elif self.detection_mode == self.detection_mode_options[1]: # subsurface
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
-            self.imgsave_dir = '/home/cslics04/images/subsurface/detections/detection_images'
-            self.txtsave_dir = '/home/cslics04/images/subsurface/detections/detection_textfiles'
+            # self.imgsave_dir = '/home/cslics04/images/subsurface/detections/detection_images'
+            # self.txtsave_dir = '/home/cslics04/images/subsurface/detections/detection_textfiles'
             self.detector = SubSurface_Detector(meta_dir, img_dir=img_sim_dir)
             
         else: # red circle
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
-            self.imgsave_dir = '/home/cslics04/images/redcircles/detections/detection_images'
-            self.txtsave_dir = '/home/cslics04/images/redcircles/detections/detection_textfiles'
+            # self.imgsave_dir = '/home/cslics04/images/redcircles/detections/detection_images'
+            # self.txtsave_dir = '/home/cslics04/images/redcircles/detections/detection_textfiles'
             self.detector = RedCircle_Detector(meta_dir=meta_dir, img_dir=img_sim_dir)
         
         # for simulation purposes
-        os.makedirs(self.imgsave_dir, exist_ok=True)
-        os.makedirs(self.txtsave_dir, exist_ok=True)
         self.img_sim_dir = img_sim_dir
         self.sim_count = 0 # counter to iterate/index img_sim_dir images
         
@@ -149,6 +147,22 @@ class CameraTrigger:
         os.makedirs(tmp_dir, exist_ok=True)
         self.img_dir = img_dir
         self.tmp_dir = tmp_dir
+        
+        # NOTE for detector output, img/txt savedir
+        if self.detection_mode == self.detection_mode_options[0]: # surface
+            self.imgsave_dir = os.path.join(save_dir, 'images','detections_surface','detection_images')
+            self.txtsave_dir = os.path.join(save_dir, 'images','detections_surface','detection_textfiles')
+
+        elif self.detection_mode == self.detection_mode_options[1]: # subsurface
+            self.imgsave_dir = os.path.join(save_dir, 'images','detections_subsurface','detection_images')
+            self.txtsave_dir = os.path.join(save_dir, 'images','detections_subsurface','detection_textfiles')
+
+        else: # if self.detection_mode == self.detection_mode_options[2]: # redcircle
+            self.imgsave_dir = os.path.join(save_dir, 'images','detections_redcircle','detection_images')
+            self.txtsave_dir = os.path.join(save_dir, 'images','detections_redcircle','detection_textfiles')
+        
+        os.makedirs(self.imgsave_dir, exist_ok=True)
+        os.makedirs(self.txtsave_dir, exist_ok=True)
 
         self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
 
