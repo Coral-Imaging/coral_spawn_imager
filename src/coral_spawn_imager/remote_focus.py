@@ -10,9 +10,9 @@ import time
 print('creating PiCamera2Wrapper object')
 
 # remote preview setup
-CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_lights.json'
-# SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
-SAVE_IMAGE_DIR_SSD = '/home/cslics04/images'
+CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_preview_2023.json'
+SAVE_IMAGE_DIR_SSD = '/media/cslics04/cslics_ssd/images'
+# SAVE_IMAGE_DIR_SSD = '/home/cslics04/images'
 CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
 path = os.path.dirname(__file__) # get path to this file
@@ -51,7 +51,8 @@ while not value == 'x':
         print(f'capture an image')
         img_np, img_name, metadata = picam.capture_image(save_dir=SAVE_IMAGE_DIR_SSD)
         picam.update_metadata(metadata, coral_metadata)
-        picam.save_image(img_np, os.path.join(SAVE_IMAGE_DIR_SSD, img_name), metadata)
+        metadata_name = img_name.split('.')[0] + '.json'
+        picam.save_image(img_np, os.path.join(SAVE_IMAGE_DIR_SSD, img_name), metadata, os.path.join(SAVE_IMAGE_DIR_SSD, metadata_name))
         
     elif value == 'x':
         print(f'stop preview')
