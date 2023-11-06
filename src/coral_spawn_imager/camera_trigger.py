@@ -31,6 +31,7 @@ import time
 import glob
 import code
 import random
+import datetime
 
 from coral_spawn_imager.PiCamera2Wrapper import PiCamera2Wrapper
 # from ultralytics import YOLO
@@ -147,6 +148,7 @@ class CameraTrigger:
         os.makedirs(tmp_dir, exist_ok=True)
         self.img_dir = img_dir
         self.tmp_dir = tmp_dir
+        self.save_dir = save_dir
         
         # NOTE for detector output, img/txt savedir
         if self.detection_mode == self.detection_mode_options[0]: # surface
@@ -186,6 +188,10 @@ class CameraTrigger:
     #     self.image_pub.publish(msg)
 
 
+    def set_img_dir(self, img_dir: str):
+        self.img_dir = img_dir
+        
+        
     def camera_trigger_callback(self, msg):
         """ read in trigger message string and interpret how many images to capture"""
 
@@ -195,8 +201,13 @@ class CameraTrigger:
         # update the coral metadata every trigger
         self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
 
-        if not os.path.isdir(self.img_dir):
-            os.makedir(self.img_dir)
+        # TODO make date-based folders on ssd to prevent overly large number of files in a single folder
+        current_date = datetime.date.today()
+        date_str = current_date.strftime("%Y%m%d")
+        self.img_dir = os.path.join(self.save_dir, 'images', date_str)
+        os.makedirs(self.img_dir, exist_ok=True)
+        # if not os.path.isdir(self.img_dir):
+        #     os.makedir(self.img_dir)
 
         # capture n_imges
         for i in range(self.SAMPLE_SIZE):
