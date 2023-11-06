@@ -232,8 +232,8 @@ class CameraTrigger:
             predictions = self.detector.detect(img_prep)
             
             # save predictions
-            self.detector.save_image_predictions(predictions, img, img_name, self.imgsave_dir, self.detector.class_colours, self.detector.classes) # TODO setup, so that I can call it like this
-            self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir, self.detector.classes)
+            self.detector.save_image_predictions(predictions, img, img_name, self.imgsave_dir) # TODO setup, so that I can call it like this
+            self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir)
 
             self.rate.sleep()
         
