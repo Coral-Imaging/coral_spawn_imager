@@ -1,5 +1,6 @@
 # picamera id and config
 /config/*.json
+/config
 
 
 # Byte-compiled / optimized / DLL files
