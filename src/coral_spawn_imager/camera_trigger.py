@@ -51,6 +51,7 @@ class CameraTrigger:
     SUBSCRIBER_TOPIC_NAME = 'trigger'
     REMOTE_FOCUS_SUBSCRIBER_TOPIC_NAME = 'remote_focus'
     IMAGE_PUBLISHER_NAME = 'image'
+    COUNT_PUBLISHER_NAME = 'image_count'
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
     SAMPLE_SIZE =30 # number of images captured in sequence after trigger is received
@@ -99,6 +100,8 @@ class CameraTrigger:
 
         # for image display via ROS
         self.image_pub = rospy.Publisher(self.IMAGE_PUBLISHER_NAME, Image, queue_size=10)
+        
+        self.image_count_pub = rospy.Publisher(self.COUNT_PUBLISHER_NAME, String, queue_size=10)
         
         # subscriber to start publishing image
         # self.image_sub = rospy.Subscriber(self.IMAGE_SUBSCRIBER_NAME, Image, self.image_preview_callback, queue_size=1)
@@ -237,6 +240,11 @@ class CameraTrigger:
             self.detector.save_image_predictions(predictions, img, img_name, det_img_dir) # TODO setup, so that I can call it like this
             self.detector.save_text_predictions(predictions, img_name, det_txt_dir)
 
+            # publish to COUNT topic
+            num_pred = len(predictions)
+            msg = String
+            msg.data = str(num_pred)
+            self.image_count_pub.publish(msg)
             self.rate.sleep()
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
