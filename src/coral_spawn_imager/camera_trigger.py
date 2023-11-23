@@ -74,7 +74,7 @@ class CameraTrigger:
     detection_mode_options = ['surface', 'subsurface', 'redcircle']
     DEFAULT_DETECTION_MODE = detection_mode_options[0] # NOTE set detection mode
 
-    SIMULATION_MODE=False
+    SIMULATION_MODE=True
 
     def __init__(self, save_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=SIMULATION_MODE):
 
@@ -242,9 +242,9 @@ class CameraTrigger:
 
             # publish to COUNT topic
             num_pred = len(predictions)
-            msg = String
-            msg.data = str(num_pred)
-            self.image_count_pub.publish(msg)
+            # msg = String
+            # msg.data = str(num_pred)
+            self.image_count_pub.publish(str(num_pred))
             self.rate.sleep()
         
         rospy.loginfo('Finished image capture. Awaiting image trigger')
