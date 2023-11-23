@@ -54,7 +54,7 @@ class CameraTrigger:
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
     SAMPLE_SIZE =30 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = 2 # Hz
+    SAMPLE_RATE = 1 # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_SSD_BAK = '/home/cslics04/ssd_bak'
@@ -64,7 +64,7 @@ class CameraTrigger:
     # SAVE_IMAGE_DIR_CARD = '/home/cslics04/images'
     # SAVE_IMAGE_DIR_CARD_TMP = '/tmp'
 
-    CAMERA_CONFIGURATION_FILE = '../../launch/camera_config_seasim_2023.json'
+    CAMERA_CONFIGURATION_FILE = '../../config/camera_config_seasim_2023.json'
     CORAL_METADATA_FILE = '../../launch/coral_metadata.json'
 
     SURFACE_DETECTION_MODEL_FILE = '/home/cslics04/cslics_ws/src/ultralytics_cslics/weights/cslics_20230905_yolov8n_640p_amtenuis1000.pt'
@@ -110,22 +110,17 @@ class CameraTrigger:
         if self.detection_mode == self.detection_mode_options[0]: # surface
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/surface'
-            # self.imgsave_dir = '/home/cslics04/images/surface/detections/detection_images'
-            #self.txtsave_dir = '/home/cslics04/images/surface/detections/detection_textfiles'
+
             self.detector = Surface_Detector(meta_dir, img_dir=img_sim_dir)
             
         elif self.detection_mode == self.detection_mode_options[1]: # subsurface
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/subsurface'
-            # self.imgsave_dir = '/home/cslics04/images/subsurface/detections/detection_images'
-            # self.txtsave_dir = '/home/cslics04/images/subsurface/detections/detection_textfiles'
             self.detector = SubSurface_Detector(meta_dir, img_dir=img_sim_dir)
             
         else: # red circle
             meta_dir = '/home/cslics04/cslics_ws/src/coral_spawn_imager'
             img_sim_dir = '/home/cslics04/20231018_cslics_detector_images_sample/microspheres'
-            # self.imgsave_dir = '/home/cslics04/images/redcircles/detections/detection_images'
-            # self.txtsave_dir = '/home/cslics04/images/redcircles/detections/detection_textfiles'
             self.detector = RedCircle_Detector(meta_dir=meta_dir, img_dir=img_sim_dir)
         
         # for simulation purposes
@@ -152,19 +147,22 @@ class CameraTrigger:
         
         # NOTE for detector output, img/txt savedir
         if self.detection_mode == self.detection_mode_options[0]: # surface
-            self.imgsave_dir = os.path.join(save_dir, 'images','detections_surface','detection_images')
-            self.txtsave_dir = os.path.join(save_dir, 'images','detections_surface','detection_textfiles')
+            self.detections_save_dir = os.path.join(save_dir, 'images', 'detections_surface')
+            # self.imgsave_dir = os.path.join(save_dir, 'images','detections_surface','detection_images')
+            # self.txtsave_dir = os.path.join(save_dir, 'images','detections_surface','detection_textfiles')
 
         elif self.detection_mode == self.detection_mode_options[1]: # subsurface
-            self.imgsave_dir = os.path.join(save_dir, 'images','detections_subsurface','detection_images')
-            self.txtsave_dir = os.path.join(save_dir, 'images','detections_subsurface','detection_textfiles')
+            self.detections_save_dir = os.path.join(save_dir, 'images', 'detections_subsurface')
+            #self.imgsave_dir = os.path.join(save_dir, 'images','detections_subsurface','detection_images')
+            # self.txtsave_dir = os.path.join(save_dir, 'images','detections_subsurface','detection_textfiles')
 
         else: # if self.detection_mode == self.detection_mode_options[2]: # redcircle
-            self.imgsave_dir = os.path.join(save_dir, 'images','detections_redcircle','detection_images')
-            self.txtsave_dir = os.path.join(save_dir, 'images','detections_redcircle','detection_textfiles')
+            self.detections_save_dir = os.path.join(save_dir, 'images', 'detections_redcircle')
+            # self.imgsave_dir = os.path.join(save_dir, 'images','detections_redcircle','detection_images')
+            #self.txtsave_dir = os.path.join(save_dir, 'images','detections_redcircle','detection_textfiles')
         
-        os.makedirs(self.imgsave_dir, exist_ok=True)
-        os.makedirs(self.txtsave_dir, exist_ok=True)
+        os.makedirs(self.detections_save_dir, exist_ok=True)
+        #os.makedirs(self.txtsave_dir, exist_ok=True)
 
         self.coral_metadata = self.picam.read_custom_metadata(os.path.join(self.path, self.CORAL_METADATA_FILE))
 
@@ -232,8 +230,12 @@ class CameraTrigger:
             predictions = self.detector.detect(img_prep)
             
             # save predictions
-            self.detector.save_image_predictions(predictions, img, img_name, self.imgsave_dir) # TODO setup, so that I can call it like this
-            self.detector.save_text_predictions(predictions, img_name, self.txtsave_dir)
+            det_img_dir = os.path.join(self.detections_save_dir, 'detection_images', date_str)
+            det_txt_dir = os.path.join(self.detections_save_dir, 'detection_textfiles', date_str)
+            os.makedirs(det_img_dir, exist_ok=True)
+            os.makedirs(det_txt_dir, exist_ok=True)
+            self.detector.save_image_predictions(predictions, img, img_name, det_img_dir) # TODO setup, so that I can call it like this
+            self.detector.save_text_predictions(predictions, img_name, det_txt_dir)
 
             self.rate.sleep()
         

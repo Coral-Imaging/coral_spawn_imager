@@ -1,8 +1,8 @@
 {
     "preview_type": "null",
     "camera_index": 1,
-    "image_width":1280,
-    "image_height": 960,
+    "image_width":4056,
+    "image_height": 3040,
     "image_width_preview": 640,
     "image_height_preview": 480,
     "AeConstraintMode": "Shadows",
