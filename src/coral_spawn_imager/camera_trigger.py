@@ -271,6 +271,8 @@ class CameraTrigger:
                               glob.glob(os.path.join(self.img_sim_dir, '*.jpeg')))
             print(f'length of img_list: {len(img_list)}')
             # i = random.randint(0, len(img_list)-1) # TODO probably better to cycle through these images
+            if self.sim_count == len(img_list):
+                self.sim_count = 0 # reset image sim counter 
             img_np = cv.imread(img_list[self.sim_count])
             img_np = cv.cvtColor(img_np, cv.COLOR_BGR2RGB)
             img_name = os.path.basename(img_list[self.sim_count])
