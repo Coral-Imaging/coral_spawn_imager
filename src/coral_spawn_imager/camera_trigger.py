@@ -54,8 +54,8 @@ class CameraTrigger:
     COUNT_PUBLISHER_NAME = 'image_count'
     # IMAGE_SUBSCRIBER_NAME = 'camera/image/compressed'
     
-    SAMPLE_SIZE =30 # number of images captured in sequence after trigger is received
-    SAMPLE_RATE = 1 # Hz
+    SAMPLE_SIZE =60 # number of images captured in sequence after trigger is received
+    SAMPLE_RATE = float(1/5) # Hz
 
     SAVE_SSD = '/media/cslics04/cslics_ssd'
     SAVE_SSD_BAK = '/home/cslics04/ssd_bak'
@@ -74,7 +74,7 @@ class CameraTrigger:
     detection_mode_options = ['surface', 'subsurface', 'redcircle']
     DEFAULT_DETECTION_MODE = detection_mode_options[0] # NOTE set detection mode
 
-    SIMULATION_MODE=True
+    SIMULATION_MODE=False
 
     def __init__(self, save_dir=None, detection_mode = DEFAULT_DETECTION_MODE, sim=SIMULATION_MODE):
 
@@ -192,7 +192,7 @@ class CameraTrigger:
     def set_img_dir(self, img_dir: str):
         self.img_dir = img_dir
         
-        
+count        
     def camera_trigger_callback(self, msg):
         """ read in trigger message string and interpret how many images to capture"""
 
